@@ -145,10 +145,21 @@ class State {
                     await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.ENTER });
 
                     try {
-                        await func();
+                        const contestants = [
+                            func()
+                        ];
+
+                        if (timeout) {
+                            contestants.push(new Promise((resolve, reject) => {
+                                setTimeout(() => reject(new Error('Timeout')));
+                            }));
+                        }
+
+                        await Promise.race(contestants);
+
                         await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.SUCCESS });
                     } catch (ex) {
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.FAILURE, ex });
+                        await this._reporter.on({ entry: 'describe', context: me.context, event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE, ex });
                     } finally {
                         await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.LEAVE });
                     }

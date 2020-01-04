@@ -44,9 +44,11 @@ describe('a', async () => {
 
         });
     });
-    describe('az', async () => {
+    testish({ timeout: 100 }).describe('az', async () => {
         test('az1', async () => {
-
+            await new Promise(resolve => {
+                setTimeout(resolve, 200);
+            })
         });
         test('az2', async () => {
 
