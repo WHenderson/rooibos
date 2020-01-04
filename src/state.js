@@ -6,7 +6,7 @@ class State {
         this._stack = [];
         this._reporter = reporter || new Reporter();
 
-        this.push('root');
+        this.push('root', { nest: true });
 
         const root = this.current;
         Promise.resolve()
@@ -14,13 +14,18 @@ class State {
             .then(() => this._after(root));
     }
 
-    push(name, nest=true) {
+    get current() {
+        return this._stack[this._stack.length - 1];
+    }
+
+    push(name, options) {
         const item = {
             name,
-            nest,
-            only: false,
+            options: Object.assign({}, this._stack.length !== 0 ? this.current : {}, options),
+            //nest
+            //only: false,
             started: false,
-            timeout: undefined,
+            //timeout: undefined,
             before: [],
             beforeEach: [],
             afterEach: [],
@@ -36,10 +41,6 @@ class State {
 
         this._stack.push(item);
         return item;
-    }
-
-    get current() {
-        return this._stack[this._stack.length - 1];
     }
 
     pop(name) {
@@ -61,8 +62,10 @@ class State {
 
         this.current.beforeEach.push({ name, func, timeout });
     }
-    describe({ name, func, only, skip }) {
-        if (!this.current.nest)
+    describe(options) {
+        const { name, func, only, skip, timeout } = Object.assign(this.current.options, options);
+
+        if (this.current.options.nest === false)
             throw new Error('Cannot nest here');
 
         if (only) {
@@ -74,7 +77,7 @@ class State {
 
         this.current.actions = this.current.actions.then(async () => {
             const current = this.current;
-            const me = this.push(name);
+            const me = this.push(name, { nest: true, timeout });
 
             try {
                 if (!skip && (!current.only || only)) {
@@ -114,8 +117,10 @@ class State {
 
         return this.current.actions;
     }
-    test({ name, func, only, skip }) {
-        if (!this.current.nest)
+    test(options) {
+        const { name, func, only, skip, timeout } = Object.assign(this.current.options, options);
+
+        if (this.current.options.nest === false)
             throw new Error('Cannot nest here');
 
         if (only) {
@@ -127,7 +132,7 @@ class State {
 
         this.current.actions = this.current.actions.then(async () => {
             const current = this.current;
-            const me = this.push(name, false);
+            const me = this.push(name, { nest: false, timeout });
 
             try {
                 if (!skip && (!current.only || only)) {
