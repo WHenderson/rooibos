@@ -22,6 +22,7 @@ class State {
         const item = {
             name,
             options: Object.assign({}, this._stack.length !== 0 ? this.current : {}, options),
+            canceled: this._stack.length !== 0 ? this.current.canceled : false,
             //nest
             //only: false,
             started: false,
@@ -63,7 +64,10 @@ class State {
         this.current.beforeEach.push({ name, func, timeout });
     }
     describe(options) {
-        const { name, func, only, skip, timeout } = Object.assign(this.current.options, options);
+        const { name, func, only, skip, timeoutDefault, timeoutDescribe } = Object.assign({}, this.current.options, options);
+        const timeout = typeof timeoutDescribe === 'number'
+            ? timeoutDescribe
+            : timeoutDefault;
 
         if (this.current.options.nest === false)
             throw new Error('Cannot nest here');
@@ -77,9 +81,14 @@ class State {
 
         this.current.actions = this.current.actions.then(async () => {
             const current = this.current;
-            const me = this.push(name, { nest: true, timeout });
+            const me = this.push(name, Object.assign({}, this.current.options, options, { nest: true }));
 
             try {
+                if (this.current.canceled) {
+                    await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.ABORT });
+                    return;
+                }
+
                 if (!skip && (!current.only || only)) {
                     await this._before(current);
 
@@ -88,17 +97,54 @@ class State {
 
                     await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.ENTER });
 
-                    try {
-                        await func();
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.SUCCESS });
-                    } catch (ex) {
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.FAILURE, ex });
-                        throw ex;
+                    const runner = async () => {
+                        await func.call(me.context, me.context);
+                        await this._reporter.on({entry: 'describe', context: me.context, event: EVENTS.SUCCESS});
+
+                        await me.actions;
+                    };
+
+                    const contestants = [
+                        runner()
+                    ];
+
+                    if (timeout) {
+                        contestants.push(
+                            new Promise((resolve, reject) => {
+                                setTimeout(() => reject(new Error('Timeout')), timeout);
+                            })
+                        );
                     }
 
-                    await me.actions;
+                    try {
+                        const res = await Promise.race(contestants);
+                    }
+                    catch (ex) {
+                        if (ex.message === 'Timeout') {
+                            for (let actionContext of this._stack.slice().reverse()) {
+                                if (actionContext.context.cancel)
+                                    actionContext.context.cancel(actionContext.context);
+                                actionContext.canceled = true;
 
-                    await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.LEAVE });
+                                if (actionContext === me)
+                                    break;
+                            }
+                        }
+
+                        await me.actions;
+
+                        await this._reporter.on({
+                            entry: 'describe',
+                            context: me.context,
+                            event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE,
+                            ex
+                        });
+
+                        throw ex;
+                    }
+                    finally {
+                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.LEAVE });
+                    }
 
                     if (me.started)
                         await this._after(me);
@@ -118,7 +164,10 @@ class State {
         return this.current.actions;
     }
     test(options) {
-        const { name, func, only, skip, timeout } = Object.assign(this.current.options, options);
+        const { name, func, only, skip, timeoutDefault, timeoutTest } = Object.assign({}, this.current.options, options);
+        const timeout = typeof timeoutTest === 'number'
+            ? timeoutTest
+            : timeoutDefault;
 
         if (this.current.options.nest === false)
             throw new Error('Cannot nest here');
@@ -132,41 +181,51 @@ class State {
 
         this.current.actions = this.current.actions.then(async () => {
             const current = this.current;
-            const me = this.push(name, { nest: false, timeout });
+            const me = this.push(name, Object.assign({}, this.current.options, options, { nest: false }));
 
             try {
+                if (this.current.canceled) {
+                    await this._reporter.on({ entry: 'test', context: me.context, event: EVENTS.ABORT });
+                    return;
+                }
+
                 if (!skip && (!current.only || only)) {
                     await this._before(current);
 
                     current.started = true;
                     await this._beforeEach(current);
 
-
-                    await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.ENTER });
+                    await this._reporter.on({ entry: 'test', context: me.context, event: EVENTS.ENTER });
 
                     try {
                         const contestants = [
-                            func()
+                            func.call(me.context, me.context)
                         ];
 
                         if (timeout) {
                             contestants.push(new Promise((resolve, reject) => {
-                                setTimeout(() => reject(new Error('Timeout')));
+                                setTimeout(() => reject(new Error('Timeout')), timeout);
                             }));
                         }
 
                         await Promise.race(contestants);
 
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.SUCCESS });
+                        await this._reporter.on({ entry: 'test', context: me.context, event: EVENTS.SUCCESS });
                     } catch (ex) {
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE, ex });
+                        // Needs to be called before any other async await gets a chance to operate
+                        if (ex.message === 'Timeout' && me.context.cancel) {
+                            me.context.cancel(me.context);
+                            me.canceled = true;
+                        }
+
+                        await this._reporter.on({ entry: 'test', context: me.context, event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE, ex });
                     } finally {
-                        await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.LEAVE });
+                        await this._reporter.on({ entry: 'test', context: me.context, event: EVENTS.LEAVE });
                     }
 
                     await this._afterEach(current);
                 } else {
-                    await this._reporter.on({ entry: 'describe', context: me.context, event: EVENTS.SKIP });
+                    await this._reporter.on({ entry: 'test', context: me.context, event: EVENTS.SKIP });
                 }
             }
             finally {
@@ -210,6 +269,10 @@ class State {
                 await this._reporter.on({ entry, context: item.context, event: EVENTS.SUCCESS });
             }
             catch (ex) {
+                // Needs to be called before any other async await gets a chance to operate
+                if (ex.message === 'Timeout' && item.context.cancel)
+                    item.context.cancel(item.context);
+
                 await this._reporter.on({ entry, context: item.context, event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE, ex });
                 throw ex;
             }

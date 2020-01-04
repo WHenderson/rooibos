@@ -53,15 +53,15 @@ function testish(defaults) {
     }
 
     function after(name, func, options) {
-        return state.before(combine(name, func, defaults, options));
+        return state.after(combine(name, func, defaults, options));
     }
 
     function beforeEach(name, func, options) {
-        return state.before(combine(name, func, defaults, options));
+        return state.beforeEach(combine(name, func, defaults, options));
     }
 
     function afterEach(name, func, options) {
-        return state.before(combine(name, func, defaults, options));
+        return state.afterEach(combine(name, func, defaults, options));
     }
 
     return {

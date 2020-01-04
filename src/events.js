@@ -4,7 +4,8 @@ EVENTS = {
     FAILURE: 'failure',
     TIMEOUT: 'timeout',
     LEAVE: 'leave',
-    SKIP: 'skip'
+    SKIP: 'skip',
+    ABORT: 'abort'
 };
 
 module.exports = EVENTS;

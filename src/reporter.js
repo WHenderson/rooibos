@@ -21,6 +21,8 @@ class Reporter {
                     return '<';
                 case EVENTS.SKIP:
                     return '🚫';
+                case EVENTS.ABORT:
+                    return '🛑';
                 default:
                     return event;
             }
@@ -38,7 +40,10 @@ class Reporter {
             }
         })();
 
-        console.log(':', text);
+        if (ex)
+            console.log(':', text, ':', ex);
+        else
+            console.log(':', text);
     }
 }
 
