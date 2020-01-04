@@ -1,0 +1,8 @@
+{
+  "name": "testish",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/WHenderson/testish.git",
+  "author": "WHenderson <whenderson.github+smartgit@gmail.com>",
+  "private": true
+}
