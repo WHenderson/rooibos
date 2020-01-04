@@ -49,17 +49,17 @@ class State {
         return this._stack.pop();
     }
 
-    before({ name, func }) {
+    before({ name, func, timeout }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
-        this.current.before.push({ name, func });
+        this.current.before.push({ name, func, timeout });
     }
-    beforeEach({ name, func }) {
+    beforeEach({ name, func, timeout }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
-        this.current.beforeEach.push({ name, func });
+        this.current.beforeEach.push({ name, func, timeout });
     }
     describe({ name, func, only, skip }) {
         if (!this.current.nest)
@@ -160,29 +160,41 @@ class State {
 
         return this.current.actions;
     }
-    afterEach({ name, func }) {
+    afterEach({ name, func, timeout }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
-        this.current.afterEach.push({ name, func });
+        this.current.afterEach.push({ name, func, timeout });
     }
-    after({ name, func }) {
+    after({ name, func, timeout }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
-        this.current.after.push({ name, func });
+        this.current.after.push({ name, func, timeout });
     }
 
     async _runHooks(item, entry) {
         const actions = item[entry];
         for (let action of actions) {
             await this._reporter.on({ entry, context: item.context, event: EVENTS.ENTER });
+
             try {
-                await action.func.call(item.context, item.context);
+                const competitors = [
+                    action.func.call(item.context, item.context)
+                ];
+
+                if (action.timeout) {
+                    competitors.push(new Promise((resolve, reject) => {
+                        setTimeout(() => reject(new Error('Timeout')), action.timeout);
+                    }))
+                }
+
+                await Promise.race(competitors);
+
                 await this._reporter.on({ entry, context: item.context, event: EVENTS.SUCCESS });
             }
             catch (ex) {
-                await this._reporter.on({ entry, context: item.context, event: EVENTS.FAILURE, ex });
+                await this._reporter.on({ entry, context: item.context, event: ex.message === 'Timeout' ? EVENTS.TIMEOUT : EVENTS.FAILURE, ex });
                 throw ex;
             }
             finally {

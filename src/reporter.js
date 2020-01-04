@@ -9,15 +9,17 @@ class Reporter {
 
         const symbol = (() => {
             switch (event) {
-                case EVENTS.EVENT_ENTER:
+                case EVENTS.ENTER:
                     return '>';
-                case EVENTS.EVENT_FAILURE:
-                    return 'x';
-                case EVENTS.EVENT_SUCCESS:
+                case EVENTS.SUCCESS:
                     return '✓';
-                case EVENTS.EVENT_LEAVE:
+                case EVENTS.FAILURE:
+                    return '✗';
+                case EVENTS.TIMEOUT:
+                    return '⏰';
+                case EVENTS.LEAVE:
                     return '<';
-                case EVENTS.EVENT_SKIP:
+                case EVENTS.SKIP:
                     return '🚫';
                 default:
                     return event;

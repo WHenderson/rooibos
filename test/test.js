@@ -1,7 +1,10 @@
 const { describe, test, before, after, beforeEach, afterEach, testish } = require('../src');
 
-
-before(() => console.log('before root'));
+testish({ timeout: 100 }).before(async () => {
+    await new Promise(resolve => {
+        setTimeout(resolve, 100)
+    })
+});
 after(() => console.log('after root'));
 
 
@@ -35,7 +38,7 @@ describe('a', async () => {
             setTimeout(resolve, 100)
         });
         test('ay2', async () => {
-
+            throw new Error('my fail');
         });
         test('ay3', async () => {
 
