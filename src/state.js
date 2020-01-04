@@ -42,18 +42,11 @@ class State {
         return this._stack[this._stack.length - 1];
     }
 
-    namespace(name) {
-        if (name)
-            return this._stack.map(item => item.name).concat([name]).join('/');
-        else
-            return this._stack.map(item => item.name).join('/');
-    }
-
     pop(name) {
         if (this.current.name !== name)
             throw new Error(`Incorrect name. Expected ${name}, found ${this.current.name}`);
-        const result = this._stack.pop();
-        return result;
+
+        return this._stack.pop();
     }
 
     before(name, func) {
