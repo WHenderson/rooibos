@@ -1,4 +1,4 @@
-const { describe, test, before, after, beforeEach, afterEach } = require('../src/testish');
+const { describe, test, before, after, beforeEach, afterEach, testish } = require('../src');
 
 
 before(() => console.log('before root'));

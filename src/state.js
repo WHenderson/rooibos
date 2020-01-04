@@ -49,19 +49,19 @@ class State {
         return this._stack.pop();
     }
 
-    before(name, func) {
+    before({ name, func }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
         this.current.before.push({ name, func });
     }
-    beforeEach(name, func) {
+    beforeEach({ name, func }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
         this.current.beforeEach.push({ name, func });
     }
-    describe(name, func, only, skip, timeout) {
+    describe({ name, func, only, skip }) {
         if (!this.current.nest)
             throw new Error('Cannot nest here');
 
@@ -114,7 +114,7 @@ class State {
 
         return this.current.actions;
     }
-    test(name, func, only, skip, timeout) {
+    test({ name, func, only, skip }) {
         if (!this.current.nest)
             throw new Error('Cannot nest here');
 
@@ -160,13 +160,13 @@ class State {
 
         return this.current.actions;
     }
-    afterEach(name, func) {
+    afterEach({ name, func }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
         this.current.afterEach.push({ name, func });
     }
-    after(name, func) {
+    after({ name, func }) {
         if (this.current.started)
             throw new Error('Actions have already started, cannot add more hooks at this point');
 
