@@ -3,6 +3,7 @@ import { Context } from "./context";
 export enum EventType {
     ENTER = 'ENTER',
     SKIP = 'SKIP',
+    PENDING = 'PENDING',
     SUCCESS = 'SUCCESS',
     FAILURE = 'FAILURE',
     TIMEOUT = 'TIMEOUT',
@@ -10,18 +11,24 @@ export enum EventType {
     LEAVE = 'LEAVE'
 }
 
-export enum EntryType {
+export enum NodeType {
     describe = 'describe',
-    test = 'test',
+    test = 'test'
+}
+
+export enum HookType {
     before = 'before',
     beforeEach = 'beforeEach',
     afterEach = 'afterEach',
     after = 'after'
 }
 
+export type EntryType = NodeType | HookType;
+export const EntryType = { ...NodeType, ...HookType };
+
 export interface Event {
     entry : EntryType,
     event : EventType,
     context : Context,
-    exception : Error
+    exception? : Error
 }

@@ -2,17 +2,18 @@ import { Reporter } from '../reporter';
 import {Event, EventType, EntryType } from "../events";
 
 const mapType2Symbol = {};
-mapType2Symbol[EventType.ENTER ] = '>';
-mapType2Symbol[EventType.SKIP ] = '🚫';
-mapType2Symbol[EventType.SUCCESS ] = '✓';
-mapType2Symbol[EventType.FAILURE ] = '✗';
-mapType2Symbol[EventType.TIMEOUT ] = '⏰';
-mapType2Symbol[EventType.ABORT ] = '🛑';
-mapType2Symbol[EventType.LEAVE ] = '<';
+mapType2Symbol[EventType.ENTER] = '>';
+mapType2Symbol[EventType.SKIP] = '🚫';
+mapType2Symbol[EventType.PENDING] = '…';
+mapType2Symbol[EventType.SUCCESS] = '✓';
+mapType2Symbol[EventType.FAILURE] = '✗';
+mapType2Symbol[EventType.TIMEOUT] = '⏰';
+mapType2Symbol[EventType.ABORT] = '🛑';
+mapType2Symbol[EventType.LEAVE] = '<';
 
 const maxEntryLength = Math.max(...Object.keys(EntryType).map(entry => entry.length));
 
-export class VerboseReporter {
+export class VerboseReporter implements Reporter {
     async on(event : Event) {
         const indent = ' '.repeat(Math.max(0, event.context.parents.length - 1));
         const entry = event.entry + ' '.repeat(event.entry.length - maxEntryLength);

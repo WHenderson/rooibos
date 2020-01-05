@@ -6,6 +6,7 @@
   "author": "WHenderson <whenderson.github+smartgit@gmail.com>",
   "private": true,
   "devDependencies": {
+    "@types/node": "^13.1.4",
     "typescript": "^3.7.4"
   }
 }
