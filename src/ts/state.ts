@@ -146,7 +146,7 @@ export class StateStack {
                 await this._reporter.on({event: EventType.SUCCESS, entry: entry, context});
             }
             catch (ex) {
-                if (ex.message === 'Timeout') {
+                if (ex && ex.message === 'Timeout') {
                     await this._cancel(state);
                     await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context })
                 }
@@ -220,7 +220,7 @@ export class StateStack {
                         await this._reporter.on({event: EventType.SUCCESS, entry: entry, context: me.context});
                     }
                     catch (ex) {
-                        if (ex.message === 'Timeout') {
+                        if (ex && ex.message === 'Timeout') {
                             await this._cancel(me);
                             await this._reporter.on({event: EventType.TIMEOUT, entry: entry, context: me.context});
                         }

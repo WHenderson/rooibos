@@ -1,0 +1,26 @@
+:before     > root
+:before     ✓ root
+:before     < root
+:beforeEach > outer
+:beforeEach ✓ outer
+:beforeEach < outer
+:describe   > outer
+: before     > outer
+:describe   … outer
+: before     ✓ outer
+: before     < outer
+: beforeEach > a
+: beforeEach ✓ a
+: beforeEach < a
+: test       > a
+1
+: test       … a
+: test       ✓ a
+: test       < a
+: afterEach  > a
+: afterEach  ✓ a
+: afterEach  < a
+: beforeEach > b
+: beforeEach ✓ b
+: beforeEach < b
+: test       > b

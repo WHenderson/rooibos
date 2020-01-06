@@ -10,7 +10,7 @@ suite('trials', () => {
     for (let entry of entries) {
         test(entry,  async () => {
 
-            const outputName = path.join(__dirname, entry.replace(/^\.\/trials\//, './.output/'));
+            const outputName = path.join(__dirname, entry.replace(/^\.\/trials\//, './.output/').replace(/\.js$/, ''));
             const out = fs.openSync(outputName + '.stdout', 'w');
             const err = fs.openSync(outputName + '.stderr', 'w');
 
@@ -41,7 +41,7 @@ suite('trials', () => {
 
             if (!fs.existsSync(expectedName + '.stderr'))
                 fs.writeFileSync(expectedName + '.stderr', foundErr);
-            const expectedErr = fs.readFileSync(expectedName + '.stderr', 'utf8') : null;
+            const expectedErr = fs.readFileSync(expectedName + '.stderr', 'utf8');
 
 
             if (foundOut !== null || expectedOut !== null)

@@ -38,7 +38,7 @@ function combine(name : string | Action, callback: Action | Options, ...options 
 
 const stateStack = new StateStack();
 
-function testish(defaults? : Options) : Testish {
+function Testish(defaults? : Options) : Testish {
     defaults = defaults || {};
 
     function after(name: string, callback : Action, options?: Options) : void;
@@ -115,12 +115,12 @@ function testish(defaults? : Options) : Testish {
         describe,
         test,
         testish: function (options: Options) {
-            return testish(Object.assign({}, defaults, options));
+            return Testish(Object.assign({}, defaults, options));
         }
     }
 }
 
-const root = testish();
+const root = Testish();
 
 export const
     before = root.before,
@@ -128,4 +128,5 @@ export const
     describe = root.describe,
     test = root.test,
     afterEach = root.afterEach,
-    after = root.after;
+    after = root.after,
+    testish = root.testish;
