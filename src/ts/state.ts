@@ -10,7 +10,7 @@ enum Status {
     Pending,
     Ready,
     Started,
-    Canceled
+    Cancelled
 }
 
 function isStatusMutable(status: Status) : boolean {
@@ -71,12 +71,6 @@ export class StateStack {
         };
         this._stack = [this._root];
         this._reporter = reporter || new VerboseReporter();
-
-        // TODO: Pretty sure this doesnt work, confirm/correct
-        Promise
-            .resolve()
-            .then(() => this._root.actions)
-            .then(() => this._runHooks(this._root, HookType.after));
     }
 
     private push(entry: NodeType, options: NamedOptions) : State {
@@ -111,7 +105,7 @@ export class StateStack {
             };
             state.reject = () => {
                 assert(state.status === Status.Pending, 'Expected pending state');
-                state.status = Status.Canceled;
+                state.status = Status.Cancelled;
                 reject();
             }
         });
@@ -157,6 +151,38 @@ export class StateStack {
         this.hook(HookType.after, options);
     }
 
+    private async _cancel(state: State) {
+        for (let s of this._stack.slice(1).reverse()) {
+            switch (s.status) {
+                case Status.Pending:
+                    s.status = Status.Cancelled;
+                    s.reject();
+                    try {
+                        await state.actions;
+                    }
+                    catch (ex) {
+                        // TODO: what do we catch here? should be whatever was passed to reject?
+                    }
+                    break;
+                case Status.Ready:
+                case Status.Started:
+                    s.status = Status.Cancelled;
+                    if (s.context.cancel) {
+                        const cancel = s.context.cancel;
+                        delete s.context.cancel;
+
+                        await cancel.call(s.context, s.context);
+                    }
+                    await s.actions;
+                    break;
+            }
+
+
+            if (s === state)
+                break;
+        }
+    }
+
     private async _runHooks(state: State, entry: HookType, context?: Context) : Promise<void> {
         const actions = state[entry];
         context = context || state.context;
@@ -170,7 +196,7 @@ export class StateStack {
             }
             catch (ex) {
                 if (ex.message === 'Timeout') {
-                    // TODO: Handle timeouts
+                    await this._cancel(state);
                     await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context })
                 }
                 else {
@@ -215,7 +241,7 @@ export class StateStack {
 
             assert(parent.status !== Status.Pending, 'Cannot run child nodes whilst parent is pending');
 
-            const skip = parent.status == Status.Canceled || options.skip || (parent.filteredChildren && !options.only);
+            const skip = parent.status == Status.Cancelled || options.skip || (parent.filteredChildren && !options.only);
 
             // first non-skipped child?
             if (!skip && parent.status == Status.Ready) {
@@ -247,33 +273,7 @@ export class StateStack {
                     }
                     catch (ex) {
                         if (ex.message === 'Timeout') {
-                            // Cancel / Mark everything as cancelled
-                            for (let state of this._stack.slice().reverse()) {
-                                if (state.context.cancel)
-                                    await state.context.cancel(state.context);
-
-                                if (state === me)
-                                    break;
-
-                                state.status = Status.Canceled;
-                            }
-
-                            if (me.status === Status.Pending) {
-                                me.status = Status.Canceled;
-                                me.reject();
-
-                                try {
-                                    await me.actions;
-                                }
-                                catch (ex) {
-                                    // TODO: what do we catch here? should be whatever was passed to reject?
-                                }
-                            }
-                            else {
-                                me.status = Status.Canceled;
-                                await me.actions;
-                            }
-
+                            await this._cancel(me);
                             await this._reporter.on({event: EventType.TIMEOUT, entry: entry, context: me.context});
                         }
                         else {
