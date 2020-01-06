@@ -6,7 +6,10 @@
   "author": "WHenderson <whenderson.github+smartgit@gmail.com>",
   "private": true,
   "devDependencies": {
+    "@types/mocha": "^5.2.7",
     "@types/node": "^13.1.4",
+    "fast-glob": "^3.1.1",
+    "mocha": "^7.0.0",
     "typescript": "^3.7.4"
   }
 }
