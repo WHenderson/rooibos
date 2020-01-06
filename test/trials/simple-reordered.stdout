@@ -1,0 +1,40 @@
+:before     > root
+execute before
+:before     ✓ root
+:before     < root
+:beforeEach > my-root
+execute beforeEach
+:beforeEach ✓ my-root
+:beforeEach < my-root
+:describe   > my-root
+execute my-root begin
+execute my-root end
+:describe   … my-root
+: describe   > my-first-child
+: describe   … my-first-child
+:  test       > my-test
+execute test
+:  test       … my-test
+:  test       ✓ my-test
+:  test       < my-test
+: describe   ✓ my-first-child
+: describe   < my-first-child
+: describe   > my-second-child
+: describe   … my-second-child
+:  test       > my-test
+execute test
+:  test       … my-test
+:  test       ✓ my-test
+:  test       < my-test
+: describe   ✓ my-second-child
+: describe   < my-second-child
+:describe   ✓ my-root
+:describe   < my-root
+:afterEach  > my-root
+execute afterEach
+:afterEach  ✓ my-root
+:afterEach  < my-root
+:after      > root
+execute after
+:after      ✓ root
+:after      < root

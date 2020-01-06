@@ -1,0 +1,55 @@
+:before     > root
+:before     ✓ root
+:before     < root
+:beforeEach > outer
+:beforeEach ✓ outer
+:beforeEach < outer
+:describe   > outer
+: before     > outer
+: before     ✓ outer
+: before     < outer
+: beforeEach > a
+: beforeEach ✓ a
+: beforeEach < a
+: test       > a
+: test       … a
+: test       ✓ a
+: test       < a
+: afterEach  > a
+: afterEach  ✓ a
+: afterEach  < a
+: beforeEach > b
+: beforeEach ✓ b
+: beforeEach < b
+: test       > b
+: test       … b
+: test       ✓ b
+: test       < b
+: afterEach  > b
+: afterEach  ✓ b
+: afterEach  < b
+: after      > outer
+: after      ✓ outer
+: after      < outer
+: beforeEach > c
+:describe   … outer
+: beforeEach ✓ c
+: beforeEach < c
+: test       > c
+: test       … c
+: test       ✓ c
+: test       < c
+: afterEach  > c
+: afterEach  ✓ c
+: afterEach  < c
+: after      > outer
+: after      ✓ outer
+: after      < outer
+:describe   ✓ outer
+:describe   < outer
+:afterEach  > outer
+:afterEach  ✓ outer
+:afterEach  < outer
+:after      > root
+:after      ✓ root
+:after      < root
