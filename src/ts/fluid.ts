@@ -44,43 +44,43 @@ function testish(defaults? : Options) : Testish {
     function after(name: string, callback : Action, options?: Options) : void;
     function after(callback : Action, options?: Options) : void;
     function after(name: string | Action, callback : Action | Options, options?: Options) : void {
-        stateStack.after(combine(name, callback, options));
+        stateStack.after(combine(name, callback, defaults, options));
     }
 
     function afterEach(name: string, callback : Action, options?: Options) : void;
     function afterEach(callback : Action, options?: Options) : void;
     function afterEach(name: string | Action, callback : Action | Options, options?: Options) : void {
-        stateStack.afterEach(combine(name, callback, options));
+        stateStack.afterEach(combine(name, callback, defaults, options));
     }
 
     function before(name: string, callback : Action, options?: Options) : void;
     function before(callback : Action, options?: Options) : void;
     function before(name: string | Action, callback : Action | Options, options?: Options) : void {
-        stateStack.before(combine(name, callback, options));
+        stateStack.before(combine(name, callback, defaults, options));
     }
 
     function beforeEach(name: string, callback : Action, options?: Options) : void;
     function beforeEach(callback : Action, options?: Options) : void;
     function beforeEach(name: string | Action, callback : Action | Options, options?: Options) : void {
-        stateStack.beforeEach(combine(name, callback, options));
+        stateStack.beforeEach(combine(name, callback, defaults, options));
     }
 
     function describe(name: string, callback : Action, options?: Options) : Promise<void>;
     function describe(callback : Action, options?: Options) : Promise<void>;
     function describe(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.describe(combine(name, callback, options));
+        return stateStack.describe(combine(name, callback, defaults, options));
     }
 
     function describeOnly(name: string, callback : Action, options?: Options) : Promise<void>;
     function describeOnly(callback : Action, options?: Options) : Promise<void>;
     function describeOnly(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.describe(combine(name, callback, options, { only: true }));
+        return stateStack.describe(combine(name, callback, defaults, options, { only: true }));
     }
 
     function describeSkip(name: string, callback : Action, options?: Options) : Promise<void>;
     function describeSkip(callback : Action, options?: Options) : Promise<void>;
     function describeSkip(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.describe(combine(name, callback, options, { skip: true }));
+        return stateStack.describe(combine(name, callback, defaults, options, { skip: true }));
     }
     
     describe.only = describeOnly;
@@ -89,19 +89,19 @@ function testish(defaults? : Options) : Testish {
     function test(name: string, callback : Action, options?: Options) : Promise<void>;
     function test(callback : Action, options?: Options) : Promise<void>;
     function test(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.test(combine(name, callback, options));
+        return stateStack.test(combine(name, callback, defaults, options));
     }
 
     function testOnly(name: string, callback : Action, options?: Options) : Promise<void>;
     function testOnly(callback : Action, options?: Options) : Promise<void>;
     function testOnly(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.test(combine(name, callback, options, { only: true }));
+        return stateStack.test(combine(name, callback, defaults, options, { only: true }));
     }
 
     function testSkip(name: string, callback : Action, options?: Options) : Promise<void>;
     function testSkip(callback : Action, options?: Options) : Promise<void>;
     function testSkip(name: string | Action, callback : Action | Options, options?: Options) : Promise<void> {
-        return stateStack.test(combine(name, callback, options, { skip: true }));
+        return stateStack.test(combine(name, callback, defaults, options, { skip: true }));
     }
 
     test.only = testOnly;
