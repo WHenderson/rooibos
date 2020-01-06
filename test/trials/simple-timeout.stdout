@@ -24,3 +24,25 @@
 : beforeEach ✓ b
 : beforeEach < b
 : test       > b
+: test       ⏰ b
+: test       < b
+: afterEach  > b
+: afterEach  ✓ b
+: afterEach  < b
+: test       > c
+: test       🚫 c
+: test       < c
+: describe   > nest
+: describe   🚫 nest
+: describe   < nest
+: after      > outer
+: after      ✓ outer
+: after      < outer
+:describe   ⏰ outer
+:describe   < outer
+:afterEach  > outer
+:afterEach  ✓ outer
+:afterEach  < outer
+:after      > root
+:after      ✓ root
+:after      < root
