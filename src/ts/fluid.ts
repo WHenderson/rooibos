@@ -119,3 +119,13 @@ function testish(defaults? : Options) : Testish {
         }
     }
 }
+
+const root = testish();
+
+export const
+    before = root.before,
+    beforeEach = root.beforeEach,
+    describe = root.describe,
+    test = root.test,
+    afterEach = root.afterEach,
+    after = root.after;

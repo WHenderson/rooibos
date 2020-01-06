@@ -2,7 +2,7 @@ import { Context } from "./context";
 import {EntryType} from "./events";
 
 export interface Action extends Function {
-    (this: Context, context: Context): Promise<void>;
+    (this: Context, context?: Context): Promise<void> | void;
 }
 
 export interface Options {

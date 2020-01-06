@@ -77,7 +77,7 @@ export class StateStack {
         assert(this.current.entry === EntryType.describe, 'Can only nest inside describe blocks');
 
         const state : State = {
-            status: Status.Ready,
+            status: Status.Pending,
             entry: entry,
             filteredChildren: false,
             finalChild: undefined,
@@ -204,7 +204,7 @@ export class StateStack {
                 }
             }
             finally {
-                await this._reporter.on({event: EventType.ENTER, entry: entry, context})
+                await this._reporter.on({event: EventType.LEAVE, entry: entry, context})
             }
         }
     }

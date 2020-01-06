@@ -16,8 +16,10 @@ const maxEntryLength = Math.max(...Object.keys(EntryType).map(entry => entry.len
 export class VerboseReporter implements Reporter {
     async on(event : Event) {
         const indent = ' '.repeat(Math.max(0, event.context.parents.length - 1));
-        const entry = event.entry + ' '.repeat(event.entry.length - maxEntryLength);
+        const entry = event.entry + ' '.repeat(maxEntryLength - event.entry.length);
         const symbol = mapType2Symbol[event.event] || '?';
-        console.log(`${indent}${event.entry} ${symbol} ${event.context.name}`);
+        const exception = event.exception ? ` !${event.exception.message}` : '';
+
+        console.log(`:${indent}${entry} ${symbol} ${event.context.name}${exception}`);
     }
 }
