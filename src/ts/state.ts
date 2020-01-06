@@ -7,14 +7,13 @@ import {VerboseReporter} from "./reporters/verbose";
 import {race} from "./race";
 
 enum Status {
-    Pending,
     Ready,
     Started,
     Cancelled
 }
 
 function isStatusMutable(status: Status) : boolean {
-    return status === Status.Pending || status === Status.Ready;
+    return status === Status.Ready;
 }
 
 interface StateResolve {
@@ -38,9 +37,6 @@ interface State {
     beforeEach: NamedOptions[];
     afterEach: NamedOptions[];
     after: NamedOptions[];
-
-    resolve: StateResolve;
-    reject: StateReject;
 }
 
 export class StateStack {
@@ -49,35 +45,16 @@ export class StateStack {
     private readonly _reporter : Reporter;
 
     constructor(reporter?: Reporter) {
-        this._root = {
-            status: Status.Ready,
-            entry: EntryType.describe,
-            filteredChildren: false,
-            finalChild: undefined,
-            options: {},
-            context: {
-                name: 'root',
-                parents: []
-            },
-            actions: Promise.resolve(),
-            before: [],
-            beforeEach: [],
-            afterEach: [],
-            after: [],
-
-            // not used (yet), TODO: implement mocha 'run'
-            resolve: async () => {},
-            reject: async () => {}
-        };
-        this._stack = [this._root];
+        this._stack = [];
+        this.push(NodeType.describe, { name: 'root', callback: undefined });
         this._reporter = reporter || new VerboseReporter();
     }
 
     private push(entry: NodeType, options: NamedOptions) : State {
-        assert(this.current.entry === EntryType.describe, 'Can only nest inside describe blocks');
+        assert(this._stack.length === 0 || this.current.entry === EntryType.describe, 'Can only nest inside describe blocks');
 
         const state : State = {
-            status: Status.Pending,
+            status: Status.Ready,
             entry: entry,
             filteredChildren: false,
             finalChild: undefined,
@@ -86,29 +63,13 @@ export class StateStack {
                 name: options.name,
                 parents: this._stack.map(state => state.context)
             },
-            actions: undefined,
+            actions: Promise.resolve(),
 
             before: [],
             beforeEach: [],
             afterEach: [],
-            after: [],
-
-            resolve: undefined,
-            reject: undefined
+            after: []
         };
-
-        state.actions = new Promise((resolve, reject) => {
-            state.resolve = () => {
-                assert(state.status === Status.Pending, 'Expected pending state');
-                state.status = Status.Ready;
-                resolve();
-            };
-            state.reject = () => {
-                assert(state.status === Status.Pending, 'Expected pending state');
-                state.status = Status.Cancelled;
-                reject();
-            }
-        });
 
         this._stack.push(state);
 
@@ -132,7 +93,7 @@ export class StateStack {
     }
 
     private hook(entry: HookType, options: NamedOptions) : void {
-        if (this.current.status !== Status.Pending && this.current.status !== Status.Ready)
+        if (this.current.status !== Status.Ready)
             throw new Error('Hooks have already started, cannot add more at this point');
 
         this.current[entry].push(options);
@@ -154,16 +115,6 @@ export class StateStack {
     private async _cancel(state: State) {
         for (let s of this._stack.slice(1).reverse()) {
             switch (s.status) {
-                case Status.Pending:
-                    s.status = Status.Cancelled;
-                    s.reject();
-                    try {
-                        await state.actions;
-                    }
-                    catch (ex) {
-                        // TODO: what do we catch here? should be whatever was passed to reject?
-                    }
-                    break;
                 case Status.Ready:
                 case Status.Started:
                     s.status = Status.Cancelled;
@@ -239,8 +190,6 @@ export class StateStack {
         return this.current.actions = this.current.actions.then(async () => {
             const parent = this.current;
 
-            assert(parent.status !== Status.Pending, 'Cannot run child nodes whilst parent is pending');
-
             const skip = parent.status == Status.Cancelled || options.skip || (parent.filteredChildren && !options.only);
 
             // first non-skipped child?
@@ -263,7 +212,6 @@ export class StateStack {
 
                         await this._reporter.on({event: EventType.PENDING, entry: entry, context: me.context});
 
-                        me.resolve();
                         await me.actions;
                     };
 

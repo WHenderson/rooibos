@@ -27,7 +27,29 @@ suite('trials', () => {
                 });
             });
 
-            console.log('done');
+            fs.closeSync(out);
+            fs.closeSync(err);
+
+            const foundOut = fs.existsSync(outputName + '.stdout') ? fs.readFileSync(outputName + '.stdout', 'utf8') : null;
+            const foundErr = fs.existsSync(outputName + '.stderr') ? fs.readFileSync(outputName + '.stderr', 'utf8') : null;
+
+            const expectedName = path.join(__dirname, entry.replace(/\.js$/, ''));
+
+            if (!fs.existsSync(expectedName + '.stdout'))
+                fs.writeFileSync(expectedName + '.stdout', foundOut);
+            const expectedOut = fs.readFileSync(expectedName + '.stdout', 'utf8');
+
+            if (!fs.existsSync(expectedName + '.stderr'))
+                fs.writeFileSync(expectedName + '.stderr', foundErr);
+            const expectedErr = fs.readFileSync(expectedName + '.stderr', 'utf8') : null;
+
+
+            if (foundOut !== null || expectedOut !== null)
+                assert.equal(foundOut, expectedOut, 'stdout does not match');
+
+            if (foundErr !== null || expectedErr !== null)
+                assert.equal(foundErr, expectedErr, 'stderr does not match');
+
         })
     }
 });

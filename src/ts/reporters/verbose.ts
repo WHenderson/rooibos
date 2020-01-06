@@ -1,5 +1,5 @@
-import { Reporter } from '../reporter';
-import {Event, EventType, EntryType } from "../events";
+import {Reporter} from '../reporter';
+import {EntryType, Event, EventType} from "../events";
 
 const mapType2Symbol = {};
 mapType2Symbol[EventType.ENTER] = '>';
@@ -15,7 +15,16 @@ const maxEntryLength = Math.max(...Object.keys(EntryType).map(entry => entry.len
 
 export class VerboseReporter implements Reporter {
     async on(event : Event) {
-        const indent = ' '.repeat(Math.max(0, event.context.parents.length - 1));
+        const indent = ' '.repeat(
+            event.context.parents.length -
+            (
+                event.entry === EntryType.afterEach ||
+                event.entry === EntryType.beforeEach ||
+                (event.entry === EntryType.describe) ||
+                (event.entry === EntryType.test)
+                ? 1 : 0
+            )
+        );
         const entry = event.entry + ' '.repeat(maxEntryLength - event.entry.length);
         const symbol = mapType2Symbol[event.event] || '?';
         const exception = event.exception ? ` !${event.exception.message}` : '';
