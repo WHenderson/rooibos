@@ -6,6 +6,8 @@ import {Reporter} from "./reporter";
 import {VerboseReporter} from "./reporters/verbose";
 import {race} from "./race";
 
+// TODO: When running actions, they need to be in a race where one contestant is an unresolved which can be used to abort (when cancelling)
+
 enum Status {
     Ready,
     Started,
@@ -23,6 +25,13 @@ interface StateReject {
     () : void
 }
 
+interface StateCancel {
+    (this: State, state?:State) : Promise<void> | void;
+}
+interface StateAbort {
+    (this: State, state?:State) : Promise<void> | void;
+}
+
 interface State {
     status: Status;
 
@@ -37,6 +46,10 @@ interface State {
     beforeEach: NamedOptions[];
     afterEach: NamedOptions[];
     after: NamedOptions[];
+
+    // Cancel just these actions etc
+    cancel: StateCancel;
+    abort?: StateAbort;
 }
 
 export class StateStack {
@@ -68,7 +81,30 @@ export class StateStack {
             before: [],
             beforeEach: [],
             afterEach: [],
-            after: []
+            after: [],
+
+            cancel: async () => {
+                if (state.status === Status.Cancelled)
+                    return;
+
+                state.status = Status.Cancelled;
+
+                if (state.context.cancel) {
+                    const cancel = state.context.cancel;
+                    delete state.context.cancel;
+
+                    await cancel.call(state.context, state.context);
+                }
+
+                if (state.abort) {
+                    const abort = state.abort;
+                    delete state.abort;
+
+                    await abort.call(state, state);
+                }
+
+                //await state.actions; // Actions in the ready state will just cancel without running sub tasks or hooks etc
+            }
         };
 
         this._stack.push(state);
@@ -113,21 +149,9 @@ export class StateStack {
     }
 
     private async _cancel(state: State) {
-        for (let s of this._stack.slice(1).reverse()) {
-            switch (s.status) {
-                case Status.Ready:
-                case Status.Started:
-                    s.status = Status.Cancelled;
-                    if (s.context.cancel) {
-                        const cancel = s.context.cancel;
-                        delete s.context.cancel;
-
-                        await cancel.call(s.context, s.context);
-                    }
-                    await s.actions;
-                    break;
-            }
-
+        for (let s of this._stack.slice().reverse()) {
+            if (s.status !== Status.Cancelled)
+                await s.cancel(s);
 
             if (s === state)
                 break;
@@ -141,12 +165,28 @@ export class StateStack {
         for (let options of actions) {
             await this._reporter.on({ event: EventType.ENTER, entry: entry, context });
             try {
-                await race(resolveTimeout(options, entry), options.callback.call(context, context));
+                if (state.status !== Status.Cancelled) {
+                    const waitAbort: Promise<void> = new Promise((resolve, reject) => {
+                        state.abort = () => reject(new Error('Abort'));
+                    });
 
-                await this._reporter.on({event: EventType.SUCCESS, entry: entry, context});
+                    try {
+                        await race(options.callback.call(context, context), resolveTimeout(options, entry), waitAbort);
+                    } finally {
+                        delete state.abort;
+                    }
+
+                    await this._reporter.on({event: EventType.SUCCESS, entry: entry, context});
+                }
+                else {
+                    await this._reporter.on({event: EventType.SKIP, entry: entry, context});
+                }
             }
             catch (ex) {
-                if (ex && ex.message === 'Timeout') {
+                if (ex && ex.message === 'Abort') {
+                    await this._reporter.on({ event: EventType.ABORT, entry: entry, context })
+                }
+                else if (ex && ex.message === 'Timeout') {
                     await this._cancel(state);
                     await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context })
                 }
@@ -208,7 +248,23 @@ export class StateStack {
 
                 if (!skip) {
                     const action = async () => {
-                        await options.callback.call(me.context, me.context);
+                        let waitAbort = new Promise((resolve, reject) => {
+                            me.abort = async () => { reject(new Error('Abort')); }
+                        });
+                        try {
+                            await Promise.race([waitAbort, options.callback.call(me.context, me.context)]);
+                        }
+                        catch (ex) {
+                            if (ex && ex.message === 'Abort') {
+                                await this._reporter.on({event: EventType.ABORT, entry: entry, context: me.context});
+                            }
+                            else {
+                                await this._reporter.on({event: EventType.FAILURE, entry: entry, context: me.context, exception: ex });
+                            }
+                        }
+                        finally {
+                            delete me.abort;
+                        }
 
                         await this._reporter.on({event: EventType.PENDING, entry: entry, context: me.context});
 
@@ -216,16 +272,21 @@ export class StateStack {
                     };
 
                     try {
-                        await race(resolveTimeout(options, entry), action());
-                        await this._reporter.on({event: EventType.SUCCESS, entry: entry, context: me.context});
+                        // TODO: This race is problematic, we still need to wait for the action even after a timeout, we just need to abort it first...
+                        await race(action(), resolveTimeout(options, entry));
+                        if (me.status !== Status.Cancelled)
+                            await this._reporter.on({event: EventType.SUCCESS, entry: entry, context: me.context});
                     }
                     catch (ex) {
                         if (ex && ex.message === 'Timeout') {
+                            console.log('timeout >', options.name);
                             await this._cancel(me);
                             await this._reporter.on({event: EventType.TIMEOUT, entry: entry, context: me.context});
+                            console.log('timeout <', options.name);
                         }
                         else {
-                            await this._reporter.on({event: EventType.FAILURE, entry: entry, context: me.context, exception: ex });
+                            console.log('unexpected error', ex);
+                            throw ex;
                         }
                     }
                 }
@@ -240,6 +301,7 @@ export class StateStack {
                 }
             }
             finally {
+                console.log('pop', options.name);
                 this.pop(me);
             }
 

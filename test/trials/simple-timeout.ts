@@ -13,7 +13,7 @@ afterEach('my-afterEach', async () => {
 after('my-after', async () => {
 });
 
-testish({ timeoutDefault: 50 }).describe('outer', async () => {
+testish({ timeoutDescribe: 500 }).describe('outer', async () => {
     let x = 0;
 
     before('my-inner-before', async () => {
@@ -35,9 +35,10 @@ testish({ timeoutDefault: 50 }).describe('outer', async () => {
     test('b', async (context) => {
 
         await new Promise((resolve, reject) => {
-            const id = setTimeout(resolve, 100);
+            const id = setTimeout(resolve, 500);
             context.cancel = () => {
                 clearTimeout(id);
+                //reject(new Error('hmm'));
             }
         });
 
@@ -47,10 +48,9 @@ testish({ timeoutDefault: 50 }).describe('outer', async () => {
     test('c', async (context) => {
 
         await new Promise((resolve, reject) => {
-            const id = setTimeout(resolve, 100);
+            const id = setTimeout(resolve, 500);
             context.cancel = () => {
                 clearTimeout(id);
-                reject();
             }
         });
 
