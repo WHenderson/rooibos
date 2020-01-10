@@ -20,7 +20,7 @@ export class VerboseReporter implements Reporter {
             (
                 event.entry === EntryType.afterEach ||
                 event.entry === EntryType.beforeEach ||
-                (event.entry === EntryType.describe) ||
+                (event.entry === EntryType.describe && event.event !== EventType.PENDING) ||
                 (event.entry === EntryType.test)
                 ? 1 : 0
             )
@@ -29,6 +29,8 @@ export class VerboseReporter implements Reporter {
         const symbol = mapType2Symbol[event.event] || '?';
         const exception = event.exception ? ` !${event.exception.message}` : '';
 
-        console.log(`:${indent}${entry} ${symbol} ${event.context.name}${exception}`);
+        console.log(`:${indent}${entry} ${symbol} ${event.name}${exception} (${event.context.name})`);
+        if (event.exception)
+            console.error(event.exception);
     }
 }

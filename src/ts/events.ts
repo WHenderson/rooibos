@@ -27,6 +27,7 @@ export type EntryType = NodeType | HookType;
 export const EntryType = { ...NodeType, ...HookType };
 
 export interface Event {
+    name : string,
     entry : EntryType,
     event : EventType,
     context : Context,

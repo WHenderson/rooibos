@@ -163,39 +163,56 @@ export class StateStack {
         context = context || state.context;
 
         for (let options of actions) {
-            await this._reporter.on({ event: EventType.ENTER, entry: entry, context });
+            await this._reporter.on({ event: EventType.ENTER, entry: entry, context, name: options.name });
             try {
                 if (state.status !== Status.Cancelled) {
                     const waitAbort: Promise<void> = new Promise((resolve, reject) => {
                         state.abort = () => reject(new Error('Abort'));
                     });
+                    let timeoutId;
+                    const timeout = resolveTimeout(options, entry);
+                    const waitTimeout: Promise<void> = timeout
+                        ? new Promise((resolve, reject) => {
+                            timeoutId = setTimeout(() => {
+                                reject(new Error('Timeout'));
+                            })
+                        })
+                        : undefined;
 
                     try {
-                        await race(options.callback.call(context, context), resolveTimeout(options, entry), waitAbort);
+                        //await race(options.callback.call(context, context), resolveTimeout(options, entry), waitAbort);
+
+                        const waitAction = options.callback.call(context, context);
+
+                        if (timeout)
+                            await Promise.race([waitAbort, waitTimeout, waitAction]);
+                        else
+                            await Promise.race([waitAbort, waitAction]);
                     } finally {
+                        clearTimeout(timeoutId);
                         delete state.abort;
                     }
 
-                    await this._reporter.on({event: EventType.SUCCESS, entry: entry, context});
+                    await this._reporter.on({event: EventType.SUCCESS, entry: entry, context, name: options.name});
                 }
                 else {
-                    await this._reporter.on({event: EventType.SKIP, entry: entry, context});
+                    await this._reporter.on({event: EventType.SKIP, entry: entry, context, name: options.name});
                 }
             }
             catch (ex) {
                 if (ex && ex.message === 'Abort') {
-                    await this._reporter.on({ event: EventType.ABORT, entry: entry, context })
+                    await this._reporter.on({ event: EventType.ABORT, entry: entry, context, name: options.name })
                 }
                 else if (ex && ex.message === 'Timeout') {
                     await this._cancel(state);
-                    await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context })
+                    await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context, name: options.name })
                 }
                 else {
-                    await this._reporter.on({ event: EventType.FAILURE, entry: entry, context })
+                    await this._reporter.on({ event: EventType.FAILURE, entry: entry, context, name: options.name })
                 }
             }
             finally {
-                await this._reporter.on({event: EventType.LEAVE, entry: entry, context})
+                await this._reporter.on({ event: EventType.LEAVE, entry: entry, context, name: options.name })
             }
         }
     }
@@ -244,64 +261,99 @@ export class StateStack {
                     await this._runHooks(parent, HookType.beforeEach, me.context);
                 }
 
-                await this._reporter.on({ event: EventType.ENTER, entry: entry, context: me.context });
+                await this._reporter.on({ event: EventType.ENTER, entry: entry, context: me.context, name: options.name });
 
                 if (!skip) {
-                    const action = async () => {
-                        let waitAbort = new Promise((resolve, reject) => {
-                            me.abort = async () => { reject(new Error('Abort')); }
-                        });
+
+                    let waitAbort = new Promise((resolve, reject) => {
+                        me.abort = async () => { reject(new Error('Abort')); }
+                    });
+                    let timeoutId;
+                    const timeout = resolveTimeout(options, entry);
+                    const waitTimeout: Promise<void> = timeout
+                        ? new Promise((resolve, reject) => {
+                            timeoutId = setTimeout(() => {
+                                reject(new Error('Timeout'));
+                            })
+                        })
+                        : undefined;
+
+                    try {
+                        // Run the immediate action
                         try {
-                            await Promise.race([waitAbort, options.callback.call(me.context, me.context)]);
+                            const waitAction = options.callback.call(me.context, me.context);
+
+                            if (timeout)
+                                await Promise.race([waitAbort, waitTimeout, waitAction]);
+                            else
+                                await Promise.race([waitAbort, waitAction]);
                         }
                         catch (ex) {
                             if (ex && ex.message === 'Abort') {
-                                await this._reporter.on({event: EventType.ABORT, entry: entry, context: me.context});
+                                await this._reporter.on({ event: EventType.ABORT, entry: entry, context: me.context, name: options.name });
+                            }
+                            else if (ex && ex.message === 'Timeout') {
+                                await me.cancel(me);
+                                await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context: me.context, name: options.name })
                             }
                             else {
-                                await this._reporter.on({event: EventType.FAILURE, entry: entry, context: me.context, exception: ex });
+                                await this._reporter.on({
+                                    event: EventType.FAILURE,
+                                    entry: entry,
+                                    context: me.context,
+                                    exception: ex,
+                                    name: options.name
+                                });
                             }
                         }
                         finally {
                             delete me.abort;
                         }
 
-                        await this._reporter.on({event: EventType.PENDING, entry: entry, context: me.context});
+                        // Notify we are running the children
+                        // Don't notify of children since some may have been waited on and thus executed earlier
+                        //await this._reporter.on({event: EventType.PENDING, entry: entry, context: me.context});
 
-                        await me.actions;
-                    };
+                        // Run children
+                        try {
+                            if (timeout && me.status !== Status.Cancelled)
+                                await Promise.race([waitTimeout, me.actions]);
+                            else
+                                await me.actions;
+                        }
+                        catch (ex) {
+                            if (ex && ex.message === 'Timeout') {
+                                for (let s of this._stack.slice().reverse()) {
+                                    if (s.status !== Status.Cancelled)
+                                        await s.cancel(s);
 
-                    try {
-                        // TODO: This race is problematic, we still need to wait for the action even after a timeout, we just need to abort it first...
-                        await race(action(), resolveTimeout(options, entry));
+                                    await s.actions;
+
+                                    if (s === me)
+                                        break;
+                                }
+                                await this._reporter.on({ event: EventType.TIMEOUT, entry: entry, context: me.context, name: options.name })
+                            }
+                        }
+
                         if (me.status !== Status.Cancelled)
-                            await this._reporter.on({event: EventType.SUCCESS, entry: entry, context: me.context});
+                            await this._reporter.on({ event: EventType.SUCCESS, entry: entry, context: me.context, name: options.name });
                     }
-                    catch (ex) {
-                        if (ex && ex.message === 'Timeout') {
-                            console.log('timeout >', options.name);
-                            await this._cancel(me);
-                            await this._reporter.on({event: EventType.TIMEOUT, entry: entry, context: me.context});
-                            console.log('timeout <', options.name);
-                        }
-                        else {
-                            console.log('unexpected error', ex);
-                            throw ex;
-                        }
+                    finally {
+                        clearTimeout(timeoutId);
                     }
                 }
                 else {
-                    await this._reporter.on({ event: EventType.SKIP, entry: entry, context: me.context });
+                    await this._reporter.on({ event: EventType.SKIP, entry: entry, context: me.context, name: options.name });
                 }
 
-                await this._reporter.on({ event: EventType.LEAVE, entry: entry, context: me.context });
+                await this._reporter.on({ event: EventType.LEAVE, entry: entry, context: me.context, name: options.name });
 
                 if (!skip) {
                     await this._runHooks(parent, HookType.afterEach, me.context);
                 }
             }
             finally {
-                console.log('pop', options.name);
                 this.pop(me);
             }
 
