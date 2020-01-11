@@ -6,8 +6,6 @@ import {Reporter} from "./reporter";
 import {VerboseReporter} from "./reporters/verbose";
 import {race} from "./race";
 
-// TODO: When running actions, they need to be in a race where one contestant is an unresolved which can be used to abort (when cancelling)
-
 enum Status {
     Ready,
     Started,
@@ -377,9 +375,6 @@ export class StateStack {
                 this.pop(me);
             }
 
-            // last child
-            // TODO: doesn't work if we wait for a test, because at that time the test thinks its the last child?
-            //
             if (parent.status !== Status.Ready && parent.finalChild === options && parent.actionsStatus !== PromiseStatus.Pending) {
                 await this._runHooks(parent, HookType.after);
             }
