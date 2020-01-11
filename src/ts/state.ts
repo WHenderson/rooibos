@@ -14,6 +14,12 @@ enum Status {
     Cancelled
 }
 
+enum PromiseStatus {
+    Pending,
+    Rejected,
+    Fulfilled
+}
+
 function isStatusMutable(status: Status) : boolean {
     return status === Status.Ready;
 }
@@ -41,6 +47,7 @@ interface State {
     options: Options;
     context: Context;
     actions: Promise<void>;
+    actionsStatus: PromiseStatus;
 
     before: NamedOptions[];
     beforeEach: NamedOptions[];
@@ -60,6 +67,7 @@ export class StateStack {
     constructor(reporter?: Reporter) {
         this._stack = [];
         this.push(NodeType.describe, { name: 'root', callback: undefined });
+        this.current.actionsStatus = PromiseStatus.Fulfilled;
         this._reporter = reporter || new VerboseReporter();
     }
 
@@ -76,7 +84,8 @@ export class StateStack {
                 name: options.name,
                 parents: this._stack.map(state => state.context)
             },
-            actions: Promise.resolve(),
+            actions: undefined,
+            actionsStatus: undefined,
 
             before: [],
             beforeEach: [],
@@ -244,6 +253,11 @@ export class StateStack {
         // tag this node as the final child
         this.current.finalChild = options;
 
+        if (!this.current.actions) {
+            this.current.actions = Promise.resolve();
+            this.current.actionsStatus = this._stack.length === 1 ? PromiseStatus.Fulfilled : PromiseStatus.Pending;
+        }
+
         return this.current.actions = this.current.actions.then(async () => {
             const parent = this.current;
 
@@ -287,8 +301,12 @@ export class StateStack {
                                 await Promise.race([waitAbort, waitTimeout, waitAction]);
                             else
                                 await Promise.race([waitAbort, waitAction]);
+
+                            me.actionsStatus = PromiseStatus.Fulfilled;
                         }
                         catch (ex) {
+                            me.actionsStatus = PromiseStatus.Rejected;
+
                             if (ex && ex.message === 'Abort') {
                                 await this._reporter.on({ event: EventType.ABORT, entry: entry, context: me.context, name: options.name });
                             }
@@ -309,6 +327,8 @@ export class StateStack {
                         finally {
                             delete me.abort;
                         }
+
+
 
                         // Notify we are running the children
                         // Don't notify of children since some may have been waited on and thus executed earlier
@@ -358,7 +378,9 @@ export class StateStack {
             }
 
             // last child
-            if (parent.status !== Status.Ready && parent.finalChild === options) {
+            // TODO: doesn't work if we wait for a test, because at that time the test thinks its the last child?
+            //
+            if (parent.status !== Status.Ready && parent.finalChild === options && parent.actionsStatus !== PromiseStatus.Pending) {
                 await this._runHooks(parent, HookType.after);
             }
         });

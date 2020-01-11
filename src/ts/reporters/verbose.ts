@@ -15,6 +15,9 @@ const maxEntryLength = Math.max(...Object.keys(EntryType).map(entry => entry.len
 
 export class VerboseReporter implements Reporter {
     async on(event : Event) {
+        //if (event.event == EventType.ENTER || event.event === EventType.LEAVE)
+        //    return;
+
         const indent = ' '.repeat(
             event.context.parents.length -
             (
