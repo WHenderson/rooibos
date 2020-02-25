@@ -1,4 +1,5 @@
-import {Context, EnumEntry} from "../dsl";
+import {EnumEntry} from "../dsl/EntryType";
+import {Context} from "../dsl/Context";
 
 export enum EventType {
     ENTER = 'ENTER',

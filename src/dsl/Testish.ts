@@ -105,7 +105,7 @@ export interface Testish {
     };
 }
 
-export function testish(options?: NodeOptions & HookOptions & { reporter?: Reporter }) : Testish {
+export function testish(options?: NodeOptions & HookOptions & { reporter?: Reporter, filter?: boolean }) : Testish {
     const rootDefaults = Object.assign({}, options, { name: 'root', callback: undefined, nodeType: EnumNodeEntry.describe });
     const reporter = rootDefaults.reporter;
     delete rootDefaults.reporter;
@@ -117,7 +117,7 @@ export function testish(options?: NodeOptions & HookOptions & { reporter?: Repor
         aapi = oa;
     });
 
-    let filtered = false;
+    let filter : boolean = rootDefaults.filter || false;
 
     resolve();
 
@@ -136,9 +136,6 @@ export function testish(options?: NodeOptions & HookOptions & { reporter?: Repor
 
     const _testish = function testish(defaults: NodeOptions & HookOptions) : Testish {
         defaults = Object.assign({}, defaults);
-
-        if (defaults.only)
-            filtered = true; // filtered is a global
 
         function testish(options: NodeOptions & HookOptions) : Testish {
             return _testish(Object.assign({}, defaults, options));
@@ -164,106 +161,98 @@ export function testish(options?: NodeOptions & HookOptions & { reporter?: Repor
                     }, {}),
                 options
             );
-            // TODO: option inheritance isn't working properly. See inheritance of 'only'
-            if (options.only)
-                filtered = true;
 
             return state.nodes = state.nodes.then(async () => {
                 const outer = state;
 
-                try {
-                    const wait = Abortable.fromAsync(async (aapi) => {
-                        aapi.on(() => console.log(`abort ${name} from outer`));
+                const wait = Abortable.fromAsync(async (aapi) => {
+                    aapi.on(() => console.log(`abort ${name} from outer`));
 
-                        const EX_TIMEOUT = new Error(`timeout ${name} inner`);
-                        const EX_ABORT = new Error(`abort ${name} inner`);
+                    const EX_TIMEOUT = new Error(`timeout ${name} inner`);
+                    const EX_ABORT = new Error(`abort ${name} inner`);
 
-                        const inner: State = {
-                            hooks: [],
-                            nodes: Promise.resolve(),
-                            options: options,
-                            context: {
-                                name: name,
-                                parents: outer.context.parents.concat([outer.context]),
-                                aapi: undefined
-                            }
-                        };
-                        state = inner;
-
-                        (aapi as any).name = `${name} layer 1`;
-
-                        const report = async (evenType: EventType, ex?: Error) => {
-                            try {
-                                await reporter.on({
-                                    name: inner.context.name,
-                                    entry: entryType,
-                                    type: evenType,
-                                    context: inner.context,
-                                    exception: ex
-                                })
-                            }
-                            catch (ex) {
-                                console.log('error during reporting');
-                            }
-                        };
-
-                        const skip = options.skip || (filtered && !options.only);
-
-                        const wait = !skip
-                            ? Abortable.fromAsync<Error|void>(async (aapi) => {
-                                inner.context.aapi = aapi;
-                                (aapi as any).name = `${name} layer 2`;
-                                aapi.on(() => console.log(`abort ${name} from inner`));
-
-                                await Promise.resolve();
-
-                                await callback.call(inner.context, inner.context);
-                                await inner.nodes;
-                            }).withTimeout(resolveTimeout(entryType, options), {resolve: EX_TIMEOUT}).withAutoAbort(aapi, {resolve: EX_ABORT})
-                            : undefined;
-
-                        await report(EventType.ENTER);
-
-                        try {
-                            if (!skip) {
-                                const result = await wait;
-
-                                if (result === EX_TIMEOUT || result === EX_ABORT) {
-                                    if (options.safeAbort) {
-                                        await report(EventType.PENDING);
-                                        await wait.promise;
-                                    }
-
-                                    if (result === EX_TIMEOUT)
-                                        await report(EventType.TIMEOUT);
-                                    else if (result === EX_ABORT)
-                                        await report(EventType.ABORT);
-                                } else
-                                    await report(EventType.SUCCESS);
-                            }
-                            else {
-                                await report(EventType.SKIPPED);
-                            }
-                        } catch (ex) {
-                            await report(EventType.FAILURE);
-
-                            if (entryType !== EnumNodeEntry.it)
-                                throw ex;
-                        } finally {
-                            await report(EventType.LEAVE);
-                            state = outer;
+                    const inner: State = {
+                        hooks: [],
+                        nodes: Promise.resolve(),
+                        options: options,
+                        context: {
+                            name: name,
+                            parents: outer.context.parents.concat([outer.context]),
+                            aapi: undefined
                         }
-                    }).withAutoAbort(outer.context.aapi, {resolve: undefined });
+                    };
+                    state = inner;
 
-                    // wait for resolution or abort
+                    (aapi as any).name = `${name} layer 1`;
+
+                    const report = async (evenType: EventType, ex?: Error) => {
+                        try {
+                            await reporter.on({
+                                name: inner.context.name,
+                                entry: entryType,
+                                type: evenType,
+                                context: inner.context,
+                                exception: ex
+                            })
+                        }
+                        catch (ex) {
+                            console.log('error during reporting');
+                        }
+                    };
+
+                    const skip = options.skip || (filter && !options.only && entryType === EnumNodeEntry.it);
+
+                    const wait = !skip
+                        ? Abortable.fromAsync<Error|void>(async (aapi) => {
+                            inner.context.aapi = aapi;
+                            (aapi as any).name = `${name} layer 2`;
+                            aapi.on(() => console.log(`abort ${name} from inner`));
+
+                            await Promise.resolve();
+
+                            await callback.call(inner.context, inner.context);
+                            await inner.nodes;
+                        }).withTimeout(resolveTimeout(entryType, options), {resolve: EX_TIMEOUT}).withAutoAbort(aapi, {resolve: EX_ABORT})
+                        : undefined;
+
+                    await report(EventType.ENTER);
+
+                    try {
+                        if (!skip) {
+                            const result = await wait;
+
+                            if (result === EX_TIMEOUT || result === EX_ABORT) {
+                                if (options.safeAbort) {
+                                    await report(EventType.PENDING);
+                                    await wait.promise;
+                                }
+
+                                if (result === EX_TIMEOUT)
+                                    await report(EventType.TIMEOUT);
+                                else if (result === EX_ABORT)
+                                    await report(EventType.ABORT);
+                            } else
+                                await report(EventType.SUCCESS);
+                        }
+                        else {
+                            await report(EventType.SKIPPED);
+                        }
+                    } catch (ex) {
+                        await report(EventType.FAILURE, ex);
+
+                        if (entryType !== EnumNodeEntry.it)
+                            throw ex;
+                    } finally {
+                        await report(EventType.LEAVE);
+                        state = outer;
+                    }
+                }).withAutoAbort(outer.context.aapi, {resolve: undefined });
+
+                try {
                     await wait;
-
-                    // Ensure reporting etc is complete
-                    await wait.promise;
                 }
-                catch (ex) {
-                    console.log('ex:', ex);
-                    throw ex;
+                finally {
+                    await wait.promise;
                 }
             });
         }

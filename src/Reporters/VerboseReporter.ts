@@ -1,5 +1,5 @@
 import {Reporter,EventType,Event} from "./Reporter";
-import {log} from "../log";
+import {log} from "../../test/_util/log";
 
 export class VerboseReporter implements Reporter {
     public static symbolMap = new Map([
