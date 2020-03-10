@@ -1,4 +1,4 @@
-import {Reporter,EventType,Event} from "./Reporter";
+import {Event, Reporter} from "../types";
 
 export class JsonReporter implements Reporter {
     public readonly events : Event[];
@@ -8,6 +8,6 @@ export class JsonReporter implements Reporter {
     }
 
     async on(event: Event) {
-        this.events.push(Object.assign({}, event ));
+        this.events.push(Object.assign({}, event, { context: Object.assign({}, event.context) } ));
     }
 }

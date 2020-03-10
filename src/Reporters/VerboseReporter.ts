@@ -1,17 +1,90 @@
-import {Reporter,EventType,Event} from "./Reporter";
-import {log} from "../../test/_util/log";
+import {BlockType, Event, EventType, Reporter} from "../types";
+
+export interface BlockItem {
+    blockValue: string;
+    eventTypeMap: Map<EventType, string>;
+}
 
 export class VerboseReporter implements Reporter {
-    public static symbolMap = new Map([
-        [EventType.ENTER, '>'],
-        [EventType.PENDING, '…'],
-        [EventType.SUCCESS, '✓'],
-        [EventType.FAILURE, '✗'],
-        [EventType.SKIPPED, '↷'],
-        [EventType.CANCELLED, '🚫'],
-        [EventType.TIMEOUT, '⏰'],
-        [EventType.ABORT, '🛑'],
-        [EventType.LEAVE, '<']
+
+    public static blockTypeMap = new Map<BlockType, BlockItem>([
+        [
+            BlockType.SCRIPT,
+            {
+                blockValue: 'script',
+                eventTypeMap: new Map<EventType, string>([
+                    [EventType.SKIP, '↷'],
+                    [EventType.ENTER, '⇒'],
+                    [EventType.TIMEOUT, '⏰'],
+                    [EventType.ABORT, '🛑'],
+                    [EventType.EXCEPTION, '⚠'],
+                    [EventType.LEAVE_SUCCESS, '⇐'],
+                    [EventType.LEAVE_EXCEPTION, '⇐'],
+                    [EventType.LEAVE_TIMEOUT, '⇐'],
+                    [EventType.LEAVE_ABORT, '⇐'],
+                ])
+            }
+        ],
+        [
+            BlockType.DESCRIBE,
+            {
+                blockValue: 'describe',
+                eventTypeMap: new Map<EventType, string>([
+                    [EventType.SKIP, '↷'],
+                    [EventType.ENTER, '⇒'],
+                    [EventType.TIMEOUT, '⏰'],
+                    [EventType.ABORT, '🛑'],
+                    [EventType.EXCEPTION, '⚠'],
+                    [EventType.LEAVE_SUCCESS, '⇐'],
+                    [EventType.LEAVE_EXCEPTION, '⇐'],
+                    [EventType.LEAVE_TIMEOUT, '⇐'],
+                    [EventType.LEAVE_ABORT, '⇐'],
+                ])
+            }
+        ],
+        [
+            BlockType.IT,
+            {
+                blockValue: 'it',
+                eventTypeMap: new Map<EventType, string>([
+                    [EventType.SKIP, '↷'],
+                    [EventType.ENTER, '⎆'],
+                    [EventType.TIMEOUT, '⏰'],
+                    [EventType.ABORT, '🛑'],
+                    [EventType.EXCEPTION, '⚠'],
+                    [EventType.LEAVE_SUCCESS, '✓'],
+                    [EventType.LEAVE_EXCEPTION, '✗'],
+                    [EventType.LEAVE_TIMEOUT, '✗'],
+                    [EventType.LEAVE_ABORT, '✗'],
+                ])
+            }
+        ],
+        [
+            BlockType.NOTE,
+            {
+                blockValue: 'note',
+                eventTypeMap: new Map<EventType, string>([
+                    [EventType.NOTE, '📝']
+                ])
+            }
+        ],
+        [
+            BlockType.HOOK,
+            {
+                blockValue: 'hook',
+                eventTypeMap: new Map<EventType, string>([
+                    [EventType.SKIP, '↷'],
+                    [EventType.ENTER, '⇒'],
+                    [EventType.TIMEOUT, '⏰'],
+                    [EventType.ABORT, '🛑'],
+                    [EventType.EXCEPTION, '⚠'],
+                    [EventType.LEAVE_SUCCESS, '⇐'],
+                    [EventType.LEAVE_EXCEPTION, '⇐'],
+                    [EventType.LEAVE_TIMEOUT, '⇐'],
+                    [EventType.LEAVE_ABORT, '⇐'],
+                ])
+            }
+        ]
     ]);
 
     private readonly log : (message: string) => void | PromiseLike<void>;
@@ -21,8 +94,11 @@ export class VerboseReporter implements Reporter {
     }
 
     async on(event: Event) {
-        const symbol = VerboseReporter.symbolMap.get(event.type) || event.type;
-        const tree = event.context.parents.map(p => p.name).join('/');
-        this.log(`## ${tree} ${symbol} ${event.name} ${event.exception ? event.exception.message : ''}`)
+        const blockItem = VerboseReporter.blockTypeMap.get(event.blockType) || { blockValue: event.blockType, eventTypeMap: new Map()};
+        const strBlockType = blockItem.blockValue;
+        const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
+        const description = event.context.description;
+        const exception = event.exception && event.exception.message;
+        await this.log(`${strEventType} ${strBlockType} - ${description}${exception ? ` : ${exception}` : ''}`);
     }
 }

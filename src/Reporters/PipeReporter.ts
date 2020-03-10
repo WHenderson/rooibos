@@ -1,4 +1,4 @@
-import {Reporter,EventType,Event} from "./Reporter";
+import {Event, Reporter} from "../types";
 
 export class PipeReporter implements Reporter {
     private readonly reporters : Reporter[];
