@@ -1,4 +1,4 @@
-import { testish } from "./Testish";
+import { Testish } from "./Testish";
 import { Reporter, VerboseReporter, PipeReporter, JsonReporter } from "./Reporters";
 
-export { testish, Reporter, VerboseReporter, PipeReporter, JsonReporter };
+export { Testish, Reporter, VerboseReporter, PipeReporter, JsonReporter };

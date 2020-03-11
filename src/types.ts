@@ -35,7 +35,7 @@ export enum EventType {
     LEAVE_SUCCESS = 'leave-success',
     LEAVE_EXCEPTION = 'leave-exception',
     LEAVE_TIMEOUT = 'leave-timeout',
-    LEAVE_ABORT = 'abort'
+    LEAVE_ABORT = 'leave-abort'
 }
 
 export interface Event {

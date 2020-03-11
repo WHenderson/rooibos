@@ -1,14 +1,15 @@
 import {BlockType, Callback, EventType, Reporter, Stack} from "./types";
-import {ABORT_STATE, Abortable, AbortApi, Timeout} from 'advanced-promises';
+import {ABORT_STATE, Abortable, AbortApi, Timeout, AbortApiPublic} from 'advanced-promises';
 import {strict as assert} from 'assert';
 import {NullReporter} from "./Reporters/NullReporter";
 
 export class Testish {
-    private stack : Stack[];
-    private reporter : Reporter;
+    private readonly stack : Stack[];
+    private readonly reporter : Reporter;
 
-    constructor(options: { reporter?: Reporter; description?: string; promise?: PromiseLike<void> | Abortable<void>; data?: object, aapi?:AbortApi } = {}) {
+    constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object, aapi?:AbortApi } = {}) {
         this.reporter = options.reporter || new NullReporter();
+        this.stack = [];
         this.push({
             blockType: BlockType.SCRIPT,
             description: options.description,
@@ -17,23 +18,21 @@ export class Testish {
         });
     }
 
-    private get stackItem() { return this.stack[0]; }
+    private get stackItem() { return this.stack.length && this.stack[0]; }
     private get promise() { return this.stackItem.promise; }
     private set promise(val) { this.stackItem.promise = val; }
-    private get context() { return this.stackItem.context; }
+    private get context() { return this.stack.length && this.stackItem.context; }
     private get aapi() { return this.stackItem.aapi; }
     private get hooks() { return this.stackItem.hooks; }
-    private then(cb: () => Promise<void>) : Promise<void> {
+    private then(cb: () => void | Promise<void>) : Promise<void> {
         return this.promise = this.promise.then(cb);
     }
 
-    private push(options: { blockType: BlockType, description: string, promise: PromiseLike<void> | Abortable<void>, aapi?:AbortApi}) : Stack {
-        const promise : Abortable<void> = options.promise ? ('aapi' in options.promise ? options.promise : Abortable.fromPromise(options.promise)) : Abortable.resolve();
-
+    private push(options: { blockType: BlockType, description: string, promise: Promise<void>, aapi?:AbortApi}) : Stack {
         const stackItem : Stack = {
-            promise: this.stack.length ? promise.withAutoAbort(this.context.aapi) : promise,
+            promise: options.promise || Promise.resolve(),
             hooks: [],
-            aapi: options.aapi,
+            aapi: options.aapi || new AbortApiPublic(),
             context: Object.freeze({
                 blockType: options.blockType,
                 description: options.description,
@@ -52,7 +51,7 @@ export class Testish {
         assert(found === stack);
     }
 
-    describe(description: string, callback: Callback) : PromiseLike<void> {
+    describe(description: string, callback: Callback) : void | Promise<void> {
         return this.then(async () => {
             await Promise.resolve();
 
@@ -70,16 +69,16 @@ export class Testish {
                 exception
             });
 
+            if (parentAapi.state !== ABORT_STATE.NONE) {
+                await report(EventType.SKIP);
+                this.pop(ownStackItem);
+                return;
+            }
+
             await report(EventType.ENTER);
 
             const RES_ABORT = {};
             const RES_TIMEOUT = {};
-
-            if (this.aapi.state !== ABORT_STATE.NONE) {
-                // skip if already aborting
-                await report(EventType.SKIP);
-                return;
-            }
 
             const wait = Abortable
                 .fromAsync<void|object>(async () => {
@@ -89,8 +88,14 @@ export class Testish {
                     }
                     catch (ex) {
                         exception = ex;
-                        // abort children
-                        await wait.abortWith({ resolve: RES_ABORT });
+
+                        // signal abort
+                        const waitAbort = wait.abortWith({ resolve: RES_ABORT });
+                        // report error
+                        await report(EventType.EXCEPTION, exception);
+                        // wait for abort to finish
+                        await waitAbort;
+
                         throw ex;
                     }
                     finally {
@@ -105,11 +110,13 @@ export class Testish {
             let exception : Error = undefined;
             let res = undefined;
             try {
-                const res = await wait;
+                res = await wait;
                 if (res === RES_TIMEOUT)
                     await report(EventType.TIMEOUT);
-                else if (res === RES_ABORT)
-                    await report(EventType.ABORT);
+                else if (res === RES_ABORT) {
+                    if (!exception)
+                        await report(EventType.ABORT);
+                }
 
                 // wait for safe termination of promise
                 await wait.promise;
@@ -129,7 +136,7 @@ export class Testish {
         });
     }
 
-    it(description: string, callback: Callback) : PromiseLike<void> {
+    it(description: string, callback: Callback) : void | Promise<void> {
         return this.then(async () => {
             await Promise.resolve();
 
@@ -217,5 +224,9 @@ export class Testish {
                 }
             }
         });
+    }
+
+    done() : Promise<void> {
+        return this.promise;
     }
 }
