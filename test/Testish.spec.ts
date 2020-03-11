@@ -32,130 +32,239 @@ function simplifyEvents(events : Event[]) {
     });
 }
 
+function getEx(cb: () => void) : Error {
+    let exception : Error = undefined;
+    try {
+        cb();
+    }
+    catch (ex) {
+        exception = ex;
+    }
+    return exception;
+}
+
 describe('Testish', () => {
-    it('single describe', async () => {
-        const { api, events } = createApi();
+    describe('describe', () => {
+        it('single describe', async () => {
+            const { api, events } = createApi();
 
-        api.describe('a', () => {
-        });
-
-        await api.done();
-
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-        ]);
-    });
-    it('describe block should execute in order', async () => {
-        const { api, events } = createApi();
-
-        api.describe('a', () => {
-        });
-        api.describe('b', () => {
-        });
-        api.describe('c', () => {
-        });
-
-        await api.done();
-
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-        ]);
-    });
-    it('describe blocks should execute depth first', async () => {
-        const { api, events } = createApi();
-
-        api.describe('a', () => {
-            api.describe('b', () => {
+            api.describe('a', () => {
             });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
         });
-        api.describe('c', () => {
-            api.describe('d', () => {
+        it('describe block should execute in order', async () => {
+            const { api, events } = createApi();
+
+            api.describe('a', () => {
             });
-        });
-
-        await api.done();
-
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-        ]);
-    });
-    it('exceptions should be reported in order', async () => {
-        const { api, events } = createApi();
-
-        const EX = new Error('my error');
-
-        api.describe('a', () => {
-            throw EX;
-        });
-
-        await expect(api.done()).to.eventually.be.rejectedWith(EX);
-
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-        ]);
-    });
-    it('describe should skip after exception', async () => {
-        const { api, events } = createApi();
-
-        const EX = new Error('my error');
-
-        api.describe('a', () => {
             api.describe('b', () => {
             });
             api.describe('c', () => {
             });
-            throw EX;
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
         });
+        it('describe blocks should execute depth first', async () => {
+            const { api, events } = createApi();
 
-        await expect(api.done()).to.eventually.be.rejectedWith(EX);
+            api.describe('a', () => {
+                api.describe('b', () => {
+                });
+            });
+            api.describe('c', () => {
+                api.describe('d', () => {
+                });
+            });
 
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-        ]);
-    });
-    it('exceptions should skip siblings and be passed along during reporting', async () => {
-        const { api, events } = createApi();
+            await api.done();
 
-        const EX = new Error('my error');
-        const EX2 = new Error('another error');
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+        });
+        it('exceptions should be reported in order', async () => {
+            const { api, events } = createApi();
 
-        api.describe('a', async () => {
-            api.describe('b', () => {
+            const EX = new Error('my error');
+
+            api.describe('a', () => {
                 throw EX;
             });
-            api.describe('c', () => {
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
+        it('describe should skip after exception', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+
+            api.describe('a', () => {
+                api.describe('b', () => {
+                });
+                api.describe('c', () => {
+                });
+                throw EX;
             });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
+        it('exceptions should skip siblings and be passed along during reporting', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+            const EX2 = new Error('another error');
+
+            api.describe('a', async () => {
+                api.describe('b', () => {
+                    throw EX;
+                });
+                api.describe('c', () => {
+                });
+            });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
+    });
+    describe('it', () => {
+        it('single test', async () => {
+            const { api, events } = createApi();
+
+            api.it('a', () => {
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+            ]);
         });
 
-        await expect(api.done()).to.eventually.be.rejectedWith(EX);
+        it('should fail without throwing', async () => {
+            const { api, events } = createApi();
 
-        expect(simplifyEvents(events)).to.deep.equal([
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-        ]);
+            const EX = new Error('my error');
+
+            api.it('a', () => {
+                throw EX;
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
+
+        it('should fail from chai', async () => {
+            const { api, events } = createApi();
+
+            const EX = getEx(() => expect(false).to.be.true);
+
+            api.it('a', () => {
+                expect(false).to.be.true;
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
+
+        it('exceptions should not propagate', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+
+            api.describe('a', async () => {
+                api.it('x', () => {
+                    throw EX;
+                });
+                api.describe('b', async () => {
+                    api.it('y', () => {
+                    });
+                });
+            });
+            api.describe('c', async () => {
+                api.it('z', () => {
+                });
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            ]);
+        });
     });
+
+    describe('timeout', () => {
+        it('should time out', async () => {
+            const { api, events } = createApi();
+
+            api.describe('a', () => {
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+
+        })
+    })
 });

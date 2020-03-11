@@ -60,7 +60,37 @@ export class Testish {
         assert(found === stack);
     }
 
-    block(blockType: BlockType, description: string, callback: Callback) : void | Promise<void> {
+    private skipBlock(blockType: BlockType, description: string, callback: Callback) : void | Promise<void> {
+        return this.promise = this.promise.then(
+            async () => {
+                const ownStackItem = this.push({
+                    blockType,
+                    description
+                });
+
+                await this.report(EventType.SKIP);
+
+                this.pop(ownStackItem);
+            },
+            async (exception) => {
+                const ownStackItem = this.push({
+                    blockType,
+                    description
+                });
+
+                await this.report(EventType.SKIP, exception);
+
+                this.pop(ownStackItem);
+
+                throw exception;
+            }
+        )
+    }
+
+    private block(blockType: BlockType, description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
+        if (blockType === BlockType.IT && blockType === this.context.blockType)
+            throw new Error('Cannot nest "it" blocks');
+
         return this.promise = this.promise.then(
             async () => {
                 await Promise.resolve();
@@ -128,7 +158,8 @@ export class Testish {
                         exception = ex;
                         await this.report(EventType.EXCEPTION, ex);
                     }
-                    throw ex;
+                    if (blockType !== BlockType.IT)
+                        throw ex;
                 }
                 finally {
                     if (exception)
@@ -161,8 +192,17 @@ export class Testish {
     describe(description: string, callback: Callback) : void | Promise<void> {
         return this.block(BlockType.DESCRIBE, description, callback);
     }
+
+    describeSkip(description: string, callback: Callback) : void | Promise<void> {
+        return this.skipBlock(BlockType.DESCRIBE, description, callback);
+    }
+
     it(description: string, callback: Callback) : void | Promise<void> {
         return this.block(BlockType.IT, description, callback);
+    }
+
+    itSkip(description: string, callback: Callback) : void | Promise<void> {
+        return this.skipBlock(BlockType.IT, description, callback);
     }
 
     done() : Promise<void> {
