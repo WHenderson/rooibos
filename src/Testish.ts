@@ -1,5 +1,5 @@
 import {BlockType, Callback, EventType, Reporter, Stack} from "./types";
-import {ABORT_STATE, Abortable, AbortApi, Timeout, AbortApiPublic} from 'advanced-promises';
+import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Timeout} from 'advanced-promises';
 import {strict as assert} from 'assert';
 import {NullReporter} from "./Reporters/NullReporter";
 
@@ -27,8 +27,17 @@ export class Testish {
     private then(cb: () => void | Promise<void>) : Promise<void> {
         return this.promise = this.promise.then(cb);
     }
+    private report(eventType: EventType, exception?:Error) : Promise<void> {
+        const stackItem = this.stackItem;
+        return this.reporter.on({
+            blockType: stackItem.context.blockType,
+            eventType: eventType,
+            context: stackItem.context,
+            exception: exception
+        })
+    }
 
-    private push(options: { blockType: BlockType, description: string, promise: Promise<void>, aapi?:AbortApi}) : Stack {
+    private push(options: { blockType: BlockType, description: string, promise?: Promise<void>, aapi?:AbortApi}) : Stack {
         const stackItem : Stack = {
             promise: options.promise || Promise.resolve(),
             hooks: [],
@@ -51,179 +60,109 @@ export class Testish {
         assert(found === stack);
     }
 
-    describe(description: string, callback: Callback) : void | Promise<void> {
-        return this.then(async () => {
-            await Promise.resolve();
+    block(blockType: BlockType, description: string, callback: Callback) : void | Promise<void> {
+        return this.promise = this.promise.then(
+            async () => {
+                await Promise.resolve();
 
-            const parentAapi = this.aapi;
-            const ownStackItem = this.push({
-                blockType: BlockType.DESCRIBE,
-                description,
-                promise: Promise.resolve()
-            });
+                const parentAapi = this.aapi;
+                const ownStackItem = this.push({
+                    blockType,
+                    description
+                });
 
-            const report = async (eventType: EventType, exception?: Error) => this.reporter.on({
-                blockType: BlockType.DESCRIBE,
-                eventType,
-                context: ownStackItem.context,
-                exception
-            });
-
-            if (parentAapi.state !== ABORT_STATE.NONE) {
-                await report(EventType.SKIP);
-                this.pop(ownStackItem);
-                return;
-            }
-
-            await report(EventType.ENTER);
-
-            const RES_ABORT = {};
-            const RES_TIMEOUT = {};
-
-            const wait = Abortable
-                .fromAsync<void|object>(async () => {
-                    await Promise.resolve();
-                    try {
-                        await callback.call(this.context, this.context);
-                    }
-                    catch (ex) {
-                        exception = ex;
-
-                        // signal abort
-                        const waitAbort = wait.abortWith({ resolve: RES_ABORT });
-                        // report error
-                        await report(EventType.EXCEPTION, exception);
-                        // wait for abort to finish
-                        await waitAbort;
-
-                        throw ex;
-                    }
-                    finally {
-                        await ownStackItem.promise;
-                    }
-                })
-                .withAutoAbort(parentAapi, { resolve: RES_ABORT })
-                .withTimeout(Timeout.INF, { resolve: RES_TIMEOUT });
-
-            ownStackItem.aapi = wait.aapi;
-
-            let exception : Error = undefined;
-            let res = undefined;
-            try {
-                res = await wait;
-                if (res === RES_TIMEOUT)
-                    await report(EventType.TIMEOUT);
-                else if (res === RES_ABORT) {
-                    if (!exception)
-                        await report(EventType.ABORT);
+                if (parentAapi.state !== ABORT_STATE.NONE) {
+                    await this.report(EventType.SKIP);
+                    this.pop(ownStackItem);
+                    return;
                 }
 
-                // wait for safe termination of promise
-                await wait.promise;
-            }
-            finally {
-                if (exception)
-                    await report(EventType.LEAVE_EXCEPTION, exception);
-                else if (res === RES_TIMEOUT)
-                    await report(EventType.LEAVE_TIMEOUT);
-                else if (res === RES_ABORT)
-                    await report(EventType.LEAVE_ABORT);
-                else
-                    await report(EventType.LEAVE_SUCCESS);
+                await this.report(EventType.ENTER);
 
-                this.pop(ownStackItem);
-            }
-        });
-    }
+                const RES_ABORT = {};
+                const RES_TIMEOUT = {};
 
-    it(description: string, callback: Callback) : void | Promise<void> {
-        return this.then(async () => {
-            await Promise.resolve();
+                const wait = Abortable
+                    .fromAsync<void|object>(async () => {
+                        await Promise.resolve();
+                        try {
+                            await callback.call(this.context, this.context);
+                        }
+                        catch (ex) {
+                            exception = exception || ex;
 
-            const report = async (eventType: EventType, exception?: Error) => {};
+                            // signal abort
+                            const waitAbort = wait.abortWith({ resolve: RES_ABORT });
+                            // report error
+                            await this.report(EventType.EXCEPTION, ex);
+                            // wait for abort to finish
+                            await waitAbort;
 
-            if (this.aapi.state !== ABORT_STATE.NONE) {
-                // skip if already aborting
-                await report(EventType.SKIP);
-                return;
-            }
+                            throw ex;
+                        }
+                        finally {
+                            await ownStackItem.promise;
+                        }
+                    })
+                    .withAutoAbort(parentAapi, { resolve: RES_ABORT })
+                    .withTimeout(Timeout.INF, { resolve: RES_TIMEOUT });
 
-            const parentAapi = this.aapi;
-            const ownStackItem = this.push({
-                blockType: BlockType.DESCRIBE,
-                description,
-                promise: Promise.resolve()
-            });
+                ownStackItem.aapi = wait.aapi;
 
-            await report(EventType.ENTER);
-
-            const RES_ABORT = {};
-            const RES_TIMEOUT = {};
-
-            const wait = Abortable
-                .fromAsync<void|object>(async () => {
-                    await Promise.resolve();
-                    try {
-                        await callback.call(this.context, this.context);
-                    }
-                    catch (ex) {
-                        exception = ex;
-                        // abort children
-                        wait.abortWith({ resolve: RES_ABORT });
-                        throw ex;
-                    }
-                    finally {
-                        await ownStackItem.promise;
-                    }
-                })
-                .withAutoAbort(parentAapi, { resolve: RES_ABORT })
-                .withTimeout(Timeout.INF, { resolve: RES_TIMEOUT });
-
-            ownStackItem.aapi = wait.aapi;
-
-            let exception : Error = undefined;
-            let res = undefined;
-            try {
-                const res = await wait;
-                if (res === RES_TIMEOUT)
-                    await report(EventType.TIMEOUT);
-                else if (res === RES_ABORT)
-                    await report(EventType.ABORT);
-
-                // wait for safe termination of promise
-                await wait.promise;
-            }
-            catch (ex) {
-                await report(EventType.EXCEPTION, ex);
-
-                exception = ex;
-                throw ex;
-            }
-            finally {
+                let exception : Error = undefined;
+                let res = undefined;
                 try {
-                    await ownStackItem.promise;
+                    res = await wait;
+                    if (res === RES_TIMEOUT)
+                        await this.report(EventType.TIMEOUT);
+                    else if (res === RES_ABORT) {
+                        if (!exception)
+                            await this.report(EventType.ABORT);
+                    }
+
+                    // wait for safe termination of promise
+                    await wait.promise;
                 }
                 catch (ex) {
-                    await report(EventType.EXCEPTION, ex);
-
-                    exception = exception || ex;
-                    // noinspection ThrowInsideFinallyBlockJS
+                    if (exception !== ex) {
+                        exception = ex;
+                        await this.report(EventType.EXCEPTION, ex);
+                    }
                     throw ex;
                 }
                 finally {
                     if (exception)
-                        await report(EventType.LEAVE_EXCEPTION, exception);
+                        await this.report(EventType.LEAVE_EXCEPTION, exception);
                     else if (res === RES_TIMEOUT)
-                        await report(EventType.LEAVE_TIMEOUT);
+                        await this.report(EventType.LEAVE_TIMEOUT);
                     else if (res === RES_ABORT)
-                        await report(EventType.LEAVE_ABORT);
+                        await this.report(EventType.LEAVE_ABORT);
                     else
-                        await report(EventType.LEAVE_SUCCESS);
+                        await this.report(EventType.LEAVE_SUCCESS);
 
                     this.pop(ownStackItem);
                 }
+            },
+            async (exception) => {
+                const ownStackItem = this.push({
+                    blockType,
+                    description
+                });
+
+                await this.report(EventType.SKIP, exception);
+
+                this.pop(ownStackItem);
+
+                throw exception;
             }
-        });
+        );
+    }
+
+    describe(description: string, callback: Callback) : void | Promise<void> {
+        return this.block(BlockType.DESCRIBE, description, callback);
+    }
+    it(description: string, callback: Callback) : void | Promise<void> {
+        return this.block(BlockType.IT, description, callback);
     }
 
     done() : Promise<void> {

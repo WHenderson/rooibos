@@ -36,15 +36,17 @@ describe('Testish', () => {
     it('single describe', async () => {
         const { api, events } = createApi();
 
-        await api.describe('a', () => {
+        api.describe('a', () => {
         });
+
+        await api.done();
 
         expect(simplifyEvents(events)).to.deep.equal([
             { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
             { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
         ]);
     });
-    it('queue describe', async () => {
+    it('describe block should execute in order', async () => {
         const { api, events } = createApi();
 
         api.describe('a', () => {
@@ -65,7 +67,7 @@ describe('Testish', () => {
             { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
         ]);
     });
-    it('nest describe', async () => {
+    it('describe blocks should execute depth first', async () => {
         const { api, events } = createApi();
 
         api.describe('a', () => {
@@ -90,7 +92,7 @@ describe('Testish', () => {
             { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
         ]);
     });
-    it('describe exception', async () => {
+    it('exceptions should be reported in order', async () => {
         const { api, events } = createApi();
 
         const EX = new Error('my error');
@@ -107,7 +109,7 @@ describe('Testish', () => {
             { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
         ]);
     });
-    it.only('describe should skip after exception', async () => {
+    it('describe should skip after exception', async () => {
         const { api, events } = createApi();
 
         const EX = new Error('my error');
@@ -127,6 +129,32 @@ describe('Testish', () => {
             { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
             { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
             { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+        ]);
+    });
+    it('exceptions should skip siblings and be passed along during reporting', async () => {
+        const { api, events } = createApi();
+
+        const EX = new Error('my error');
+        const EX2 = new Error('another error');
+
+        api.describe('a', async () => {
+            api.describe('b', () => {
+                throw EX;
+            });
+            api.describe('c', () => {
+            });
+        });
+
+        await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+        expect(simplifyEvents(events)).to.deep.equal([
+            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+            { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+            { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
+            { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
             { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
         ]);
     });
