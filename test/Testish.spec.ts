@@ -1,5 +1,6 @@
 import { Testish } from "../src/Testish";
 import { VerboseReporter, PipeReporter, JsonReporter } from "../src/Reporters";
+import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {BlockType, Event, EventType} from "../src/types";
@@ -27,6 +28,15 @@ function simplifyEvents(events : Event[]) {
     return events.map(({blockType, eventType, context, exception}) => {
         if (exception)
             return { name: context.description, blockType, eventType, exception };
+        else
+            return { name: context.description, blockType, eventType };
+    });
+}
+
+function simplifyEventsEx(events : Event[]) {
+    return events.map(({blockType, eventType, context, exception}) => {
+        if (exception)
+            return { name: context.description, blockType, eventType, exception: exception.message };
         else
             return { name: context.description, blockType, eventType };
     });
@@ -244,9 +254,19 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'x', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'x', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { name: 'x', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'y', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'y', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'z', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { name: 'z', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
     });
@@ -255,16 +275,46 @@ describe('Testish', () => {
         it('should time out', async () => {
             const { api, events } = createApi();
 
-            api.describe('a', () => {
+            const EX = new Error('Timeout');
+
+            api.describe('a', async () => {
+                await new Timeout(50);
+            }, { timeout: 10 });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
+
+            expect(simplifyEventsEx(events)).to.deep.equal([
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
+            ]);
+        });
+
+        it('timeout should propegate like an exception', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('Timeout');
+
+            api.describe('a', async () => {
+                api.describe('b', async () => {
+                   await new Timeout(50);
+                }, { timeout: 10 });
+                api.describe('c', () => {
+                });
             });
 
-            await api.done();
+            await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
 
-            expect(simplifyEvents(events)).to.deep.equal([
+            expect(simplifyEventsEx(events)).to.deep.equal([
                 { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
+                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
+                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX.message },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX.message },
+                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX.message },
             ]);
+        });
 
-        })
     })
 });

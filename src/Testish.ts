@@ -3,6 +3,10 @@ import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Timeout} from 'advance
 import {strict as assert} from 'assert';
 import {NullReporter} from "./Reporters/NullReporter";
 
+export interface BlockOptions {
+    timeout?: number;
+}
+
 export class Testish {
     private readonly stack : Stack[];
     private readonly reporter : Reporter;
@@ -60,7 +64,7 @@ export class Testish {
         assert(found === stack);
     }
 
-    private skipBlock(blockType: BlockType, description: string, callback: Callback) : void | Promise<void> {
+    private skipBlock(blockType: BlockType, description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
         return this.promise = this.promise.then(
             async () => {
                 const ownStackItem = this.push({
@@ -87,9 +91,13 @@ export class Testish {
         )
     }
 
-    private block(blockType: BlockType, description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
+    private block(blockType: BlockType, description: string, callback: Callback, options: BlockOptions) : void | Promise<void> {
         if (blockType === BlockType.IT && blockType === this.context.blockType)
             throw new Error('Cannot nest "it" blocks');
+
+        const { timeout } = Object.assign({
+            timeout: Timeout.INF
+        }, options);
 
         return this.promise = this.promise.then(
             async () => {
@@ -109,11 +117,11 @@ export class Testish {
 
                 await this.report(EventType.ENTER);
 
-                const RES_ABORT = {};
-                const RES_TIMEOUT = {};
+                const RES_ABORT = new Error('Abort');
+                const RES_TIMEOUT = new Error('Timeout');
 
                 const wait = Abortable
-                    .fromAsync<void|object>(async () => {
+                    .fromAsync<void|Error>(async () => {
                         await Promise.resolve();
                         try {
                             await callback.call(this.context, this.context);
@@ -135,7 +143,7 @@ export class Testish {
                         }
                     })
                     .withAutoAbort(parentAapi, { resolve: RES_ABORT })
-                    .withTimeout(Timeout.INF, { resolve: RES_TIMEOUT });
+                    .withTimeout(timeout, { resolve: RES_TIMEOUT });
 
                 ownStackItem.aapi = wait.aapi;
 
@@ -143,8 +151,10 @@ export class Testish {
                 let res = undefined;
                 try {
                     res = await wait;
-                    if (res === RES_TIMEOUT)
-                        await this.report(EventType.TIMEOUT);
+                    if (res === RES_TIMEOUT) {
+                        exception = res;
+                        await this.report(EventType.TIMEOUT, res);
+                    }
                     else if (res === RES_ABORT) {
                         if (!exception)
                             await this.report(EventType.ABORT);
@@ -152,6 +162,9 @@ export class Testish {
 
                     // wait for safe termination of promise
                     await wait.promise;
+
+                    if (res === RES_TIMEOUT)
+                        throw res;
                 }
                 catch (ex) {
                     if (exception !== ex) {
@@ -162,10 +175,10 @@ export class Testish {
                         throw ex;
                 }
                 finally {
-                    if (exception)
+                    if (exception && exception !== RES_TIMEOUT)
                         await this.report(EventType.LEAVE_EXCEPTION, exception);
                     else if (res === RES_TIMEOUT)
-                        await this.report(EventType.LEAVE_TIMEOUT);
+                        await this.report(EventType.LEAVE_TIMEOUT, res);
                     else if (res === RES_ABORT)
                         await this.report(EventType.LEAVE_ABORT);
                     else
@@ -189,19 +202,19 @@ export class Testish {
         );
     }
 
-    describe(description: string, callback: Callback) : void | Promise<void> {
-        return this.block(BlockType.DESCRIBE, description, callback);
+    describe(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+        return this.block(BlockType.DESCRIBE, description, callback, options);
     }
 
-    describeSkip(description: string, callback: Callback) : void | Promise<void> {
+    describeSkip(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
         return this.skipBlock(BlockType.DESCRIBE, description, callback);
     }
 
-    it(description: string, callback: Callback) : void | Promise<void> {
-        return this.block(BlockType.IT, description, callback);
+    it(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+        return this.block(BlockType.IT, description, callback, options);
     }
 
-    itSkip(description: string, callback: Callback) : void | Promise<void> {
+    itSkip(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
         return this.skipBlock(BlockType.IT, description, callback);
     }
 
