@@ -39,13 +39,19 @@ export enum EventType {
 }
 
 export interface Event {
+    description: string;
     blockType: BlockType;
     eventType: EventType;
     context: Context;
     exception?: Error;
 
+    // valid during a hook
     hookType?: HookType;
     hookCreationContext?: Context; // context where the hook was generated
+
+    // Valid during a note
+    id?: string;
+    value?: JsonValue;
 }
 
 export interface Context {
@@ -73,3 +79,15 @@ export interface Stack {
 export interface Reporter {
     on(event : Event) : Promise<void>;
 }
+
+export type JsonObject = { [key: string]: JsonValue };
+export type JsonArray = JsonValue[];
+export type JsonPrimitive =
+    | null
+    | boolean
+    | number
+    | string;
+export type JsonValue =
+    | JsonPrimitive
+    | JsonArray
+    | JsonObject;

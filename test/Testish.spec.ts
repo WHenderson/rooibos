@@ -25,21 +25,20 @@ function createApi(options = {}) {
 }
 
 function simplifyEvents(events : Event[]) {
-    return events.map(({blockType, eventType, context, exception}) => {
+    return events.map(({description, blockType, eventType, context, exception, value, id}) => {
+        const obj : Partial<Event> = { description, blockType, eventType };
         if (exception)
-            return { name: context.description, blockType, eventType, exception };
-        else
-            return { name: context.description, blockType, eventType };
+            obj.exception = exception;
+        if (value)
+            obj.value = value;
+        if (id)
+            obj.id = id;
+        return obj;
     });
 }
 
 function simplifyEventsEx(events : Event[]) {
-    return events.map(({blockType, eventType, context, exception}) => {
-        if (exception)
-            return { name: context.description, blockType, eventType, exception: exception.message };
-        else
-            return { name: context.description, blockType, eventType };
-    });
+    return simplifyEvents(events).map(event => event.exception ? Object.assign({}, { exception: event.exception.message }) : event);
 }
 
 function getEx(cb: () => void) : Error {
@@ -64,8 +63,8 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
         it('describe block should execute in order', async () => {
@@ -81,12 +80,12 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
         it('describe blocks should execute depth first', async () => {
@@ -104,14 +103,14 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
         it('exceptions should be reported in order', async () => {
@@ -126,9 +125,9 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
         it('describe should skip after exception', async () => {
@@ -147,11 +146,11 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
         it('exceptions should skip siblings and be passed along during reporting', async () => {
@@ -171,13 +170,13 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
     });
@@ -191,8 +190,8 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
 
@@ -208,9 +207,9 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
 
@@ -226,9 +225,9 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'a', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
 
@@ -254,19 +253,19 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'x', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'x', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
-                { name: 'x', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'y', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'y', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'z', blockType: BlockType.IT, eventType: EventType.ENTER },
-                { name: 'z', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.IT, eventType: EventType.EXCEPTION, exception: EX },
+                { description: 'x', blockType: BlockType.IT, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'y', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'y', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'z', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: 'z', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
             ]);
         });
     });
@@ -284,9 +283,9 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
 
             expect(simplifyEventsEx(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
             ]);
         });
 
@@ -306,15 +305,47 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
 
             expect(simplifyEventsEx(events)).to.deep.equal([
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
-                { name: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
-                { name: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX.message },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX.message },
-                { name: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.TIMEOUT, exception: EX.message },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_TIMEOUT, exception: EX.message },
+                { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX.message },
             ]);
         });
 
-    })
+    });
+
+    describe.only('note', () => {
+       it('should work at each layer', async () => {
+           const { api, events } = createApi();
+
+           await api.note('id', 'global note', 'my value');
+           api.describe('a', async () => {
+               await api.note('id', 'describe note', 'my value');
+               api.it('b', async () => {
+                   await api.note('id', 'it note', 'my value');
+               });
+               await api.note('id', 'describe note after', 'my value');
+           });
+           await api.note('id', 'global note after', 'my value');
+
+           await api.done();
+
+           // TODO: Put notes into the queue to ensure they are executed in sibling order
+
+           expect(simplifyEvents(events)).to.deep.equal([
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+               { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'b', blockType: BlockType.IT, eventType: EventType.ENTER },
+               { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'b', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+               { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+               { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+           ]);
+       });
+    });
 });

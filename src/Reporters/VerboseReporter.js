@@ -23,9 +23,9 @@ class VerboseReporter {
         const blockItem = VerboseReporter.blockTypeMap.get(event.blockType) || { blockValue: event.blockType, eventTypeMap: new Map() };
         const strBlockType = blockItem.blockValue;
         const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
-        const description = event.context.description;
-        const exception = event.exception && event.exception.message;
-        await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${exception ? ` : ${exception}` : ''}`);
+        const description = (event.eventType === types_1.EventType.NOTE ? (event.id + ' - ') : '') + event.description;
+        const suffix = `${event.exception ? ': ' + event.exception.message : event.eventType === types_1.EventType.NOTE ? ': ' + JSON.stringify(event.value) : ''}`;
+        await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${suffix}`);
     }
 }
 exports.VerboseReporter = VerboseReporter;

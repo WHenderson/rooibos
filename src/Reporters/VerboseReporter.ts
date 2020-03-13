@@ -117,8 +117,8 @@ export class VerboseReporter implements Reporter {
         const blockItem = VerboseReporter.blockTypeMap.get(event.blockType) || { blockValue: event.blockType, eventTypeMap: new Map()};
         const strBlockType = blockItem.blockValue;
         const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
-        const description = event.context.description;
-        const exception = event.exception && event.exception.message;
-        await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${exception ? ` : ${exception}` : ''}`);
+        const description = (event.eventType === EventType.NOTE ? (event.id + ' - ') : '') + event.description;
+        const suffix = `${event.exception ? ': ' + event.exception.message : event.eventType === EventType.NOTE ? ': ' + JSON.stringify(event.value) : ''}`;
+        await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${suffix}`);
     }
 }

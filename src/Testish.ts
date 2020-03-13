@@ -1,4 +1,4 @@
-import {BlockType, Callback, EventType, Reporter, Stack} from "./types";
+import {BlockType, Callback, Event, EventType, JsonValue, Reporter, Stack} from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Timeout} from 'advanced-promises';
 import {strict as assert} from 'assert';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -31,14 +31,16 @@ export class Testish {
     private then(cb: () => void | Promise<void>) : Promise<void> {
         return this.promise = this.promise.then(cb);
     }
-    private report(eventType: EventType, exception?:Error) : Promise<void> {
+    private report(eventType: EventType, details : Partial<Event> = {}) : Promise<void> {
         const stackItem = this.stackItem;
-        return this.reporter.on({
-            blockType: stackItem.context.blockType,
-            eventType: eventType,
-            context: stackItem.context,
-            exception: exception
-        })
+        return this.reporter.on(Object.assign({
+                description: stackItem.context.description,
+                blockType: stackItem.context.blockType,
+                eventType: eventType,
+                context: stackItem.context,
+            },
+            details
+        ));
     }
 
     private push(options: { blockType: BlockType, description: string, promise?: Promise<void>, aapi?:AbortApi}) : Stack {
@@ -157,7 +159,7 @@ export class Testish {
                     }
                     else if (res === RES_ABORT) {
                         if (!exception)
-                            await this.report(EventType.ABORT);
+                            await this.report(EventType.ABORT, { exception });
                     }
 
                     // wait for safe termination of promise
@@ -176,7 +178,7 @@ export class Testish {
                 }
                 finally {
                     if (exception && exception !== RES_TIMEOUT)
-                        await this.report(EventType.LEAVE_EXCEPTION, exception);
+                        await this.report(EventType.LEAVE_EXCEPTION, { exception });
                     else if (res === RES_TIMEOUT)
                         await this.report(EventType.LEAVE_TIMEOUT, res);
                     else if (res === RES_ABORT)
@@ -216,6 +218,16 @@ export class Testish {
 
     itSkip(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
         return this.skipBlock(BlockType.IT, description, callback);
+    }
+
+    async note(id: string, description: string, value: JsonValue) : Promise<void> {
+        return this.promise = this.promise.then(
+            async () => {
+                await this.report(EventType.NOTE, { blockType: BlockType.NOTE, description, id, value });
+            }
+        );
+
+
     }
 
     done() : Promise<void> {
