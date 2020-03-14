@@ -2,7 +2,7 @@ import { AbortApi, AbortApiInternal, Abortable } from 'advanced-promises';
 import {Guid} from "guid-typescript";
 
 export enum BlockType {
-    SCRIPT= 'script',
+    SCRIPT = 'script',
     DESCRIBE = 'describe',
     IT = 'it',
     NOTE = 'note',

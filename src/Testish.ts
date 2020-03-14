@@ -106,112 +106,114 @@ export class Testish {
         )
     }
 
+    private async _runHooks(hooks: Hook[], exception?: Error) {
+        const ownStackItem = this.stackItem;
+
+        await hooks
+            .reduce((cur, hook) => {
+                return cur.then(
+                    async () => {
+                        await this._run({
+                            callback: hook.callback,
+                            blockType: BlockType.HOOK,
+                            description: hook.description,
+                            timeout: hook.timeout,
+                            aapi: ownStackItem.aapi,
+                            reportDefaults: {
+                                blockType: BlockType.HOOK,
+                                description: hook.description,
+                                hookOptions: hook,
+                                context: ownStackItem.context
+                            },
+                            evaluateNested: false,
+                            discardExceptions: false
+                        });
+                    },
+                    async (exception) => {
+                        this.report(
+                            EventType.SKIP,
+                            {
+                                context: ownStackItem.context,
+                                hookOptions: hook,
+                                description: hook.description,
+                                blockType: BlockType.HOOK
+                            }
+                        );
+                        throw exception;
+                    }
+                )
+            }, exception ? Promise.reject(exception) : Promise.resolve());
+    }
+
     private async _run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Partial<Event>; aapi: AbortApi}) {
         const ownStackItem = this.stackItem;
 
         const report = (eventType: EventType, exception?: Error) : Promise<void> =>
             this.report(eventType, Object.assign({}, reportDefaults, {exception}));
 
-        if (aapi.state !== ABORT_STATE.NONE) {
-            await report(EventType.SKIP);
-            return;
+        const EX_SKIP: Error = new Error('skip');
+
+        let exception: Error = undefined;
+
+        try {
+            await this._runHooks(this.findHooks({blockType, when: HookWhen.BEFORE}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
+        } catch (ex) {
+            exception = ex;
         }
-
-        // ---
-        if (blockType !== BlockType.HOOK) {
-            try {
-                await this
-                    .findHooks({blockType, when: HookWhen.BEFORE})
-                    .reduce((cur, hook) => {
-                        return cur.then(
-                            async () => {
-                                await this._run({
-                                    callback: hook.callback,
-                                    blockType: BlockType.HOOK,
-                                    description: hook.description,
-                                    timeout: hook.timeout,
-                                    aapi: ownStackItem.aapi,
-                                    reportDefaults: {
-                                        blockType: BlockType.HOOK,
-                                        description: hook.description,
-                                        hookOptions: hook,
-                                        context: ownStackItem.context
-                                    },
-                                    evaluateNested: false,
-                                    discardExceptions: false
-                                });
-                            },
-                            async (exception) => {
-                                this.report(
-                                    EventType.SKIP,
-                                    {
-                                        context: ownStackItem.context,
-                                        hookOptions: hook,
-                                        description: hook.description,
-                                        blockType: BlockType.HOOK
-                                    }
-                                );
-                                throw exception;
-                            }
-                        )
-                    }, Promise.resolve());
-            } catch (ex) {
-                await report(EventType.SKIP);
-                throw ex;
-            }
-        }
-
-        // ---
-
-        await report(EventType.ENTER);
 
         const RES_ABORT = new Error('Abort');
         const RES_TIMEOUT = new Error('Timeout');
 
-        let exception: Error = undefined;
         let res = undefined;
 
         try {
-            const wait = Abortable
-                .fromAsync<void | Error>(async () => {
-                    await Promise.resolve();
-                    try {
-                        await callback.call(ownStackItem.context, ownStackItem.context);
-                    } catch (ex) {
-                        exception = exception || ex;
+            if (!exception) {
+                await report(EventType.ENTER);
 
-                        // signal abort
-                        const waitAbort = wait.abortWith({resolve: RES_ABORT});
-                        // report error
-                        await report(EventType.EXCEPTION, exception);
-                        // wait for abort to finish
-                        await waitAbort;
+                const wait = Abortable
+                    .fromAsync<void | Error>(async () => {
+                        await Promise.resolve();
+                        try {
+                            await callback.call(ownStackItem.context, ownStackItem.context);
+                        } catch (ex) {
+                            exception = exception || ex;
 
-                        throw ex;
-                    } finally {
-                        if (evaluateNested)
-                            await ownStackItem.promise;
-                    }
-                })
-                .withAutoAbort(aapi, {resolve: RES_ABORT})
-                .withTimeout(timeout, {resolve: RES_TIMEOUT});
+                            // signal abort
+                            const waitAbort = wait.abortWith({resolve: RES_ABORT});
+                            // report error
+                            await report(EventType.EXCEPTION, exception);
+                            // wait for abort to finish
+                            await waitAbort;
 
-            ownStackItem.aapi = wait.aapi;
+                            throw ex;
+                        } finally {
+                            if (evaluateNested)
+                                await ownStackItem.promise;
+                        }
+                    })
+                    .withAutoAbort(aapi, {resolve: RES_ABORT})
+                    .withTimeout(timeout, {resolve: RES_TIMEOUT});
 
-            res = await wait;
-            if (res === RES_TIMEOUT) {
-                exception = res;
-                await report(EventType.TIMEOUT, exception);
-            } else if (res === RES_ABORT) {
-                if (!exception)
-                    await report(EventType.ABORT, exception);
+                ownStackItem.aapi = wait.aapi;
+
+                res = await wait;
+                if (res === RES_TIMEOUT) {
+                    exception = res;
+                    await report(EventType.TIMEOUT, exception);
+                } else if (res === RES_ABORT) {
+                    if (!exception)
+                        await report(EventType.ABORT, exception);
+                }
+
+                // wait for safe termination of promise
+                await wait.promise;
+
+                if (res === RES_TIMEOUT)
+                    throw res;
             }
-
-            // wait for safe termination of promise
-            await wait.promise;
-
-            if (res === RES_TIMEOUT)
-                throw res;
+            else {
+                await report(EventType.SKIP);
+            }
         } catch (ex) {
             if (exception !== ex) {
                 exception = ex;
@@ -220,7 +222,9 @@ export class Testish {
             if (!discardExceptions)
                 throw ex;
         } finally {
-            if (exception && exception !== RES_TIMEOUT)
+            if (exception === EX_SKIP)
+                {}
+            else if (exception && exception !== RES_TIMEOUT)
                 await report(EventType.LEAVE_EXCEPTION, exception);
             else if (res === RES_TIMEOUT)
                 await report(EventType.LEAVE_TIMEOUT, exception);
@@ -228,6 +232,13 @@ export class Testish {
                 await report(EventType.LEAVE_ABORT);
             else
                 await report(EventType.LEAVE_SUCCESS);
+
+            try {
+                await this._runHooks(this.findHooks({blockType, when: HookWhen.AFTER}), exception);
+            } catch (ex) {
+                if (ex !== exception)
+                    throw ex;
+            }
         }
     }
 
@@ -310,6 +321,11 @@ export class Testish {
 
     private findHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
         const hooks : Hook[] = [];
+
+        // Only DESCRIBE and IT have hooks so far
+        if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
+            return hooks;
+
         const ownStackItem = this.stackItem;
         for (let stackItem of this.stack.slice().reverse()) {
             for (let hook of stackItem.hooks) {
