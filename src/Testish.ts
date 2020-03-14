@@ -318,11 +318,11 @@ export class Testish {
                     continue;
 
                 // when
-                if (hook.when !== when && hook.when !== HookWhen.EITHER)
+                if (hook.when !== when && hook.when !== HookWhen.BOTH)
                     continue;
 
                 // depth
-                if ((hook.depth !== HookDepth.EITHER) && (stackItem === ownStackItem && hook.depth !== HookDepth.SHALLOW) && (stackItem !== ownStackItem && hook.depth !== HookDepth.DEEP))
+                if ((hook.depth !== HookDepth.ALL) && (stackItem === ownStackItem && hook.depth !== HookDepth.SHALLOW) && (stackItem !== ownStackItem && hook.depth !== HookDepth.DEEP))
                     continue;
 
                 hooks.push(hook);
@@ -334,7 +334,7 @@ export class Testish {
     hook(description: string, callback: Callback, options?: Partial<HookOptions>) : void {
         const opts : Hook = Object.assign({
             blockTypes: [],
-            when: HookWhen.EITHER,
+            when: HookWhen.BOTH,
             depth: HookDepth.SHALLOW,
             timeout: Timeout.INF,
             description,

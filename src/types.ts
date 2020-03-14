@@ -12,13 +12,13 @@ export enum BlockType {
 export enum HookWhen {
     BEFORE = 'before',
     AFTER = 'after',
-    EITHER = 'either'
+    BOTH = 'both'
 }
 
 export enum HookDepth {
     SHALLOW = 'shallow',
     DEEP = 'deep',
-    EITHER = 'either'
+    ALL = 'all'
 }
 
 export interface HookOptions {

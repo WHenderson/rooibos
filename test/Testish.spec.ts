@@ -367,11 +367,13 @@ describe('Testish', () => {
     });
 
     describe('hook', () => {
-        it.only('should run in order', async () => {
+        it('should run before each', async () => {
             const { api, events } = createApi();
 
+            // TODO: work out before vs beforeEach. add an "each" flag?
+
             api.hook('x', () => {
-            }, { depth: HookDepth.EITHER, when: HookWhen.BEFORE });
+            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE });
             api.describe('a', () => {
                 api.describe('b', () => {
                 });
@@ -384,8 +386,22 @@ describe('Testish', () => {
             await api.done();
 
             expect(simplifyEvents(events)).to.deep.equal([
-               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'a', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'a', when: HookWhen.BEFORE },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'b', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'b', when: HookWhen.BEFORE },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '1', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '1', when: HookWhen.BEFORE },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '2', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '2', when: HookWhen.BEFORE },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
             ]);
 
        });
