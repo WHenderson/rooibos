@@ -4,6 +4,7 @@ import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {BlockType, Event, EventType} from "../src/types";
+import {Guid} from "guid-typescript";
 
 chai.use(chaiAsPromised);
 const should = chai.should;
@@ -329,30 +330,32 @@ describe('Testish', () => {
        it('should work at each layer', async () => {
            const { api, events } = createApi();
 
-           await api.note('id', 'global note', 'my value');
+           const id = Guid.createEmpty();
+
+           await api.note(id, 'global note', 'my value');
            api.describe('a', async () => {
-               await api.note('id', 'describe note', 'my value');
+               await api.note(id, 'describe note', 'my value');
                api.it('b', async () => {
-                   await api.note('id', 'it note', 'my value');
+                   await api.note(id, 'it note', 'my value');
                });
-               await api.note('id', 'describe note after', 'my value');
+               await api.note(id, 'describe note after', 'my value');
            });
-           await api.note('id', 'global note after', 'my value');
+           await api.note(id, 'global note after', 'my value');
 
            await api.done();
 
            // TODO: Put notes into the queue to ensure they are executed in sibling order
 
            expect(simplifyEvents(events)).to.deep.equal([
-               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
-               { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
                { description: 'b', blockType: BlockType.IT, eventType: EventType.ENTER },
-               { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
                { description: 'b', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
-               { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
-               { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: 'id', value: 'my value' },
+               { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
            ]);
        });
     });

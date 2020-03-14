@@ -1,4 +1,5 @@
 import { AbortApi, AbortApiInternal, Abortable } from 'advanced-promises';
+import {Guid} from "guid-typescript";
 
 export enum BlockType {
     SCRIPT= 'script',
@@ -63,7 +64,7 @@ export interface Event {
     hookOptions?: HookContextOptions;
 
     // Valid during a note
-    id?: string;
+    id?: Guid;
     value?: JsonValue;
 }
 

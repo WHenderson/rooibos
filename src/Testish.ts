@@ -2,6 +2,7 @@ import {BlockType, Callback, Event, EventType, Hook, HookOptions, JsonValue, Rep
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Timeout} from 'advanced-promises';
 import {strict as assert} from 'assert';
 import {NullReporter} from "./Reporters/NullReporter";
+import {Guid} from "guid-typescript";
 
 export interface BlockOptions {
     timeout?: number;
@@ -240,7 +241,7 @@ export class Testish {
         return this.skipBlock(BlockType.IT, description, callback);
     }
 
-    async note(id: string, description: string, value: JsonValue) : Promise<void> {
+    async note(id: Guid, description: string, value: JsonValue) : Promise<void> {
         return this.promise = this.promise.then(
             async () => {
                 await this.report(EventType.NOTE, { blockType: BlockType.NOTE, description, id, value });

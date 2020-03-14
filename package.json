@@ -17,5 +17,8 @@
     "tslint-config-prettier": "^1.18.0",
     "tslint-no-unused-expression-chai": "^0.1.4",
     "typescript": "^3.7.4"
+  },
+  "dependencies": {
+    "guid-typescript": "^1.0.9"
   }
 }
