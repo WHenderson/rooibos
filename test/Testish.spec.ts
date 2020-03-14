@@ -152,6 +152,7 @@ describe('Testish', () => {
                 { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
                 { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
                 { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
+                { description: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP },
                 { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
             ]);
         });
@@ -167,8 +168,11 @@ describe('Testish', () => {
                 });
                 api.describe('c', () => {
                 });
+                api.describe('d', () => {
+                });
             });
-
+            api.describe('e', () => {
+            });
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(simplifyEvents(events)).to.deep.equal([
@@ -177,8 +181,10 @@ describe('Testish', () => {
                 { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
                 { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
                 { description: 'c', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
+                { description: 'd', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
                 { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.EXCEPTION, exception: EX },
                 { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_EXCEPTION, exception: EX },
+                { description: 'e', blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, exception: EX },
             ]);
         });
     });

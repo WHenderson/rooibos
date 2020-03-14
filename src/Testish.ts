@@ -94,7 +94,7 @@ export class Testish {
     }
 
     private async _run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Partial<Event>; aapi: AbortApi}) {
-        const report = (eventType: EventType, exception?: Error) =>
+        const report = (eventType: EventType, exception?: Error) : Promise<void> =>
             this.report(eventType, Object.assign({}, reportDefaults, {exception}));
 
         if (aapi.state !== ABORT_STATE.NONE) {
@@ -106,6 +106,7 @@ export class Testish {
 
         const RES_ABORT = new Error('Abort');
         const RES_TIMEOUT = new Error('Timeout');
+        const ownStackItem = this.stackItem;
 
         let exception: Error = undefined;
         let res = undefined;
@@ -115,7 +116,7 @@ export class Testish {
                 .fromAsync<void | Error>(async () => {
                     await Promise.resolve();
                     try {
-                        await callback.call(this.context, this.context);
+                        await callback.call(ownStackItem.context, ownStackItem.context);
                     } catch (ex) {
                         exception = exception || ex;
 
@@ -129,13 +130,13 @@ export class Testish {
                         throw ex;
                     } finally {
                         if (evaluateNested)
-                            await this.promise;
+                            await ownStackItem.promise;
                     }
                 })
                 .withAutoAbort(aapi, {resolve: RES_ABORT})
                 .withTimeout(timeout, {resolve: RES_TIMEOUT});
 
-            this.stackItem.aapi = wait.aapi;
+            ownStackItem.aapi = wait.aapi;
 
             res = await wait;
             if (res === RES_TIMEOUT) {
@@ -196,7 +197,7 @@ export class Testish {
                         reportDefaults: {
                             blockType,
                             description,
-                            context: this.context
+                            context: ownStackItem.context
                         },
                         description,
                         blockType,
