@@ -44,16 +44,24 @@ export class Testish {
     private then(cb: () => void | Promise<void>) : Promise<void> {
         return this.promise = this.promise.then(cb);
     }
-    private report(eventType: EventType, details : Partial<Event> = {}) : Promise<void> {
-        const stackItem = this.stackItem;
-        return this.reporter.on(Object.assign({
-                description: stackItem.context.description,
-                blockType: stackItem.context.blockType,
-                eventType: eventType,
-                context: stackItem.context,
-            },
-            details
+    private report(eventType: EventType, details : Omit<Event, "eventType">, exception?: Error) : Promise<void> {
+        return this.reporter.on(Object.assign(
+            { eventType },
+            details,
+            exception ? { exception} : {}
         ));
+    }
+    private reportBlock(eventType: EventType, exception?: Error) : Promise<void> {
+        const stackItem = this.stackItem;
+        return this.report(
+            eventType,
+            {
+                blockType: stackItem.context.blockType,
+                context: stackItem.context,
+                description: stackItem.context.description
+            },
+            exception
+        )
     }
 
     private push(options: { blockType: BlockType, description: string, promise?: Promise<void>, aapi?:AbortApi}) : Stack {
@@ -79,41 +87,42 @@ export class Testish {
         assert(found === stack);
     }
 
-    private skipBlock(blockType: BlockType, description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
-        return this.promise = this.promise.then(
-            async () => {
-                const ownStackItem = this.push({
-                    blockType,
-                    description
-                });
+    private findHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
+        const hooks : Hook[] = [];
 
-                await this.report(EventType.SKIP);
+        // Only DESCRIBE and IT have hooks so far
+        if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
+            return hooks;
 
-                this.pop(ownStackItem);
-            },
-            async (exception) => {
-                const ownStackItem = this.push({
-                    blockType,
-                    description
-                });
+        const ownStackItem = this.stackItem;
+        for (let stackItem of this.stack.slice().reverse()) {
+            for (let hook of stackItem.hooks) {
+                // blockType
+                if (hook.blockTypes && hook.blockTypes.length && !hook.blockTypes.includes(blockType))
+                    continue;
 
-                await this.report(EventType.SKIP, { exception });
+                // when
+                if (hook.when !== when && hook.when !== HookWhen.BOTH)
+                    continue;
 
-                this.pop(ownStackItem);
+                // depth
+                if ((hook.depth !== HookDepth.ALL) && (stackItem === ownStackItem && hook.depth !== HookDepth.SHALLOW) && (stackItem !== ownStackItem && hook.depth !== HookDepth.DEEP))
+                    continue;
 
-                throw exception;
+                hooks.push(hook);
             }
-        )
+        }
+        return hooks;
     }
 
-    private async _runHooks(hooks: Hook[], exception?: Error) {
+    private async runHooks(hooks: Hook[], exception?: Error) {
         const ownStackItem = this.stackItem;
 
         await hooks
             .reduce((cur, hook) => {
                 return cur.then(
                     async () => {
-                        await this._run({
+                        await this.run({
                             callback: hook.callback,
                             blockType: BlockType.HOOK,
                             description: hook.description,
@@ -145,7 +154,7 @@ export class Testish {
             }, exception ? Promise.reject(exception) : Promise.resolve());
     }
 
-    private async _run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Partial<Event>; aapi: AbortApi}) {
+    private async run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Omit<Event, "eventType">; aapi: AbortApi}) {
         const ownStackItem = this.stackItem;
 
         const report = (eventType: EventType, exception?: Error) : Promise<void> =>
@@ -156,7 +165,7 @@ export class Testish {
         let exception: Error = undefined;
 
         try {
-            await this._runHooks(this.findHooks({blockType, when: HookWhen.BEFORE}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
+            await this.runHooks(this.findHooks({blockType, when: HookWhen.BEFORE}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
         } catch (ex) {
             exception = ex;
         }
@@ -234,7 +243,7 @@ export class Testish {
                 await report(EventType.LEAVE_SUCCESS);
 
             try {
-                await this._runHooks(this.findHooks({blockType, when: HookWhen.AFTER}), exception);
+                await this.runHooks(this.findHooks({blockType, when: HookWhen.AFTER}), exception);
             } catch (ex) {
                 if (ex !== exception)
                     throw ex;
@@ -261,7 +270,7 @@ export class Testish {
                 });
 
                 try {
-                    await this._run({
+                    await this.run({
                         callback,
                         discardExceptions: blockType === BlockType.IT,
                         evaluateNested: true,
@@ -286,13 +295,38 @@ export class Testish {
                     description
                 });
 
-                await this.report(EventType.SKIP, { exception });
+                await this.reportBlock(EventType.SKIP, exception);
 
                 this.pop(ownStackItem);
 
                 throw exception;
             }
         );
+    }
+
+    private skipBlock(blockType: BlockType, description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+        const skip = async (exception?: Error) => {
+            const ownStackItem = this.push({
+                blockType,
+                description
+            });
+
+            await this.reportBlock(EventType.SKIP, exception);
+
+            this.pop(ownStackItem);
+
+            if (exception)
+                throw exception;
+        };
+
+        return this.promise = this.promise.then(
+            async () => {
+                await skip();
+            },
+            async (exception) => {
+                await skip(exception);
+            }
+        )
     }
 
     describe(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
@@ -314,37 +348,15 @@ export class Testish {
     async note(id: Guid, description: string, value: JsonValue) : Promise<void> {
         return this.promise = this.promise.then(
             async () => {
-                await this.report(EventType.NOTE, { blockType: BlockType.NOTE, description, id, value });
+                await this.report(EventType.NOTE, {
+                    blockType: BlockType.NOTE,
+                    context: this.context,
+                    description,
+                    id,
+                    value
+                });
             }
         );
-    }
-
-    private findHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
-        const hooks : Hook[] = [];
-
-        // Only DESCRIBE and IT have hooks so far
-        if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
-            return hooks;
-
-        const ownStackItem = this.stackItem;
-        for (let stackItem of this.stack.slice().reverse()) {
-            for (let hook of stackItem.hooks) {
-                // blockType
-                if (hook.blockTypes && hook.blockTypes.length && !hook.blockTypes.includes(blockType))
-                    continue;
-
-                // when
-                if (hook.when !== when && hook.when !== HookWhen.BOTH)
-                    continue;
-
-                // depth
-                if ((hook.depth !== HookDepth.ALL) && (stackItem === ownStackItem && hook.depth !== HookDepth.SHALLOW) && (stackItem !== ownStackItem && hook.depth !== HookDepth.DEEP))
-                    continue;
-
-                hooks.push(hook);
-            }
-        }
-        return hooks;
     }
 
     hook(description: string, callback: Callback, options?: Partial<HookOptions>) : void {
