@@ -38,7 +38,7 @@ function simplifyEvents(events : Event[]) {
 }
 
 function simplifyEventsEx(events : Event[]) {
-    return simplifyEvents(events).map(event => event.exception ? Object.assign({}, { exception: event.exception.message }) : event);
+    return simplifyEvents(events).map(event => event.exception ? Object.assign({}, event, { exception: event.exception.message }) : event);
 }
 
 function getEx(cb: () => void) : Error {
@@ -139,6 +139,8 @@ describe('Testish', () => {
                 api.describe('b', () => {
                 });
                 api.describe('c', () => {
+                });
+                api.describe('d', () => {
                 });
                 throw EX;
             });
@@ -317,7 +319,7 @@ describe('Testish', () => {
 
     });
 
-    describe.only('note', () => {
+    describe('note', () => {
        it('should work at each layer', async () => {
            const { api, events } = createApi();
 

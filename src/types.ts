@@ -8,6 +8,20 @@ export enum BlockType {
     HOOK = 'hook'
 }
 
+export interface HookOptions {
+    description: string;
+    blockTypes: BlockType[];
+    before: boolean;
+    after: boolean;
+    shallow: boolean;
+    deep: boolean;
+    timeout: number;
+}
+
+export interface HookContextOptions extends HookOptions {
+    creationContext: Context;
+}
+
 export enum HookType {
     TARGET_NEITHER = 0,
     TARGET_DESCRIBE = 1,
@@ -46,8 +60,7 @@ export interface Event {
     exception?: Error;
 
     // valid during a hook
-    hookType?: HookType;
-    hookCreationContext?: Context; // context where the hook was generated
+    hookOptions?: HookContextOptions;
 
     // Valid during a note
     id?: string;
@@ -64,9 +77,8 @@ export interface Context {
 
 export type Callback = (context: Context) => void | PromiseLike<void>;
 
-export interface Hook {
-    hookType: HookType;
-    callback: Callback;
+export interface Hook extends HookContextOptions {
+    readonly callback: Callback;
 }
 
 export interface Stack {
