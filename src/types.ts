@@ -9,13 +9,23 @@ export enum BlockType {
     HOOK = 'hook'
 }
 
+export enum HookWhen {
+    BEFORE = 'before',
+    AFTER = 'after',
+    EITHER = 'either'
+}
+
+export enum HookDepth {
+    SHALLOW = 'shallow',
+    DEEP = 'deep',
+    EITHER = 'either'
+}
+
 export interface HookOptions {
     description: string;
     blockTypes: BlockType[];
-    before: boolean;
-    after: boolean;
-    shallow: boolean;
-    deep: boolean;
+    when: HookWhen;
+    depth: HookDepth;
     timeout: number;
 }
 

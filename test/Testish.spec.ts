@@ -1,9 +1,9 @@
-import { Testish } from "../src/Testish";
-import { VerboseReporter, PipeReporter, JsonReporter } from "../src/Reporters";
+import {Testish} from "../src/Testish";
+import {JsonReporter, PipeReporter, VerboseReporter} from "../src/Reporters";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import {BlockType, Event, EventType} from "../src/types";
+import {BlockType, Event, EventType, HookDepth, HookWhen} from "../src/types";
 import {Guid} from "guid-typescript";
 
 chai.use(chaiAsPromised);
@@ -26,14 +26,19 @@ function createApi(options = {}) {
 }
 
 function simplifyEvents(events : Event[]) {
-    return events.map(({description, blockType, eventType, context, exception, value, id}) => {
-        const obj : Partial<Event> = { description, blockType, eventType };
-        if (exception)
-            obj.exception = exception;
-        if (value)
-            obj.value = value;
-        if (id)
-            obj.id = id;
+    return events.map((event) => {
+        const obj : any = { description: event.description, blockType: event.blockType, eventType: event.eventType };
+        if (event.exception)
+            obj.exception = event.exception;
+        if (event.value)
+            obj.value = event.value;
+        if (event.id)
+            obj.id = event.id;
+        if (event.blockType === BlockType.HOOK) {
+            obj.when = event.hookOptions.when;
+            obj.target = event.context.description;
+        }
+
         return obj;
     });
 }
@@ -189,6 +194,7 @@ describe('Testish', () => {
             ]);
         });
     });
+
     describe('it', () => {
         it('single test', async () => {
             const { api, events } = createApi();
@@ -357,6 +363,31 @@ describe('Testish', () => {
                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
                { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, id: id, value: 'my value' },
            ]);
+       });
+    });
+
+    describe('hook', () => {
+        it.only('should run in order', async () => {
+            const { api, events } = createApi();
+
+            api.hook('x', () => {
+            }, { depth: HookDepth.EITHER, when: HookWhen.BEFORE });
+            api.describe('a', () => {
+                api.describe('b', () => {
+                });
+                api.it('1', () => {
+                });
+            });
+            api.it('2', () => {
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+               { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+
        });
     });
 });

@@ -118,7 +118,15 @@ export class VerboseReporter implements Reporter {
         const strBlockType = blockItem.blockValue;
         const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
         const description = (event.eventType === EventType.NOTE ? (event.id + ' - ') : '') + event.description;
-        const suffix = `${event.exception ? ': ' + event.exception.message : event.eventType === EventType.NOTE ? ': ' + JSON.stringify(event.value) : ''}`;
+        const suffix = (() => {
+            if (event.exception)
+                return `: ${event.exception.message}`;
+            if (event.eventType === EventType.NOTE)
+                return `: ${JSON.stringify(event.value)}`;
+            if (event.blockType === BlockType.HOOK)
+                return `: ${event.hookOptions.when} (${event.context.description}) <= (${event.hookOptions.creationContext.description || 'root'})`;
+            return '';
+        })();
         await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${suffix}`);
     }
 }

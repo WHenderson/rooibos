@@ -24,7 +24,15 @@ class VerboseReporter {
         const strBlockType = blockItem.blockValue;
         const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
         const description = (event.eventType === types_1.EventType.NOTE ? (event.id + ' - ') : '') + event.description;
-        const suffix = `${event.exception ? ': ' + event.exception.message : event.eventType === types_1.EventType.NOTE ? ': ' + JSON.stringify(event.value) : ''}`;
+        const suffix = (() => {
+            if (event.exception)
+                return `: ${event.exception.message}`;
+            if (event.eventType === types_1.EventType.NOTE)
+                return `: ${JSON.stringify(event.value)}`;
+            if (event.blockType === types_1.BlockType.HOOK)
+                return `: ${event.hookOptions.when} (${event.context.description}) <= (${event.hookOptions.creationContext.description || 'root'})`;
+            return '';
+        })();
         await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${suffix}`);
     }
 }
