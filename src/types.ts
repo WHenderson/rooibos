@@ -98,6 +98,7 @@ export interface Stack {
     context: Context;
     aapi: AbortApi;
     parent: Stack;
+    childKinds: Set<BlockType>;
 }
 
 export interface Reporter {

@@ -81,8 +81,12 @@ export class Testish {
                 data: {},
                 get aapi() { return stackItem.aapi; }
             }),
-            parent: this.stackItem
+            parent: this.stackItem,
+            childKinds: new Set<BlockType>()
         };
+
+        // tag what kinds of blocks are nested in
+        this.stack.forEach(item => { item.childKinds.add(options.blockType)});
 
         this.stack.unshift(stackItem);
         return stackItem;
@@ -93,17 +97,18 @@ export class Testish {
         assert(found === stack);
     }
 
-    private findHooks({ownStackItem, blockType, when} : { ownStackItem: Stack; blockType: BlockType; when: HookWhen}) {
+    private findHooks({startStackItem, ownStackItem, blockTypes, when} : { startStackItem?: Stack; ownStackItem: Stack; blockTypes: BlockType[]; when: HookWhen}) {
         const hooks : Hook[] = [];
 
         // Only DESCRIBE and IT have hooks so far
-        if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
+        blockTypes = blockTypes.filter(blockType => (blockType === BlockType.DESCRIBE || blockType === BlockType.IT));
+        if (blockTypes.length === 0)
             return hooks;
 
-        for (let stackItem of this.stack.slice().reverse()) {
+        for (let stackItem of this.stack.slice(0, (this.stack.indexOf(startStackItem) + 1) || (this.stack.length + 1)).reverse()) {
             for (let hook of stackItem.hooks.slice()) {
                 // blockType
-                if (hook.blockTypes && hook.blockTypes.length && !hook.blockTypes.includes(blockType))
+                if (hook.blockTypes && hook.blockTypes.length && !blockTypes.some(blockType => hook.blockTypes.includes(blockType)))
                     continue;
 
                 // when
@@ -182,7 +187,15 @@ export class Testish {
         let exception: Error = skip || (aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
 
         try {
-            await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.BEFORE_EACH}), exception);
+            // TODO: targetting wrong context
+            await this.runHooks(this.findHooks({ ownStackItem: ownStackItem.parent, blockTypes: [blockType], when: HookOnceWhen.BEFORE}), exception);
+        }
+        catch (ex) {
+            exception = ex;
+        }
+
+        try {
+            await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockTypes: [blockType], when: HookWhen.BEFORE_EACH}), exception);
         } catch (ex) {
             exception = ex;
         }
@@ -260,10 +273,20 @@ export class Testish {
                 await report(EventType.LEAVE_SUCCESS);
 
             try {
-                await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.AFTER_EACH}), exception);
+                await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockTypes: [blockType], when: HookWhen.AFTER_EACH}), exception);
             } catch (ex) {
                 if (ex !== exception)
                     throw ex;
+            }
+            finally {
+                try {
+                    // TODO: running too soon/too late. Can't run parent details because we don't know if we have siblings yet
+                    await this.runHooks(this.findHooks({startStackItem: ownStackItem.parent, ownStackItem: ownStackItem.parent, blockTypes: [...ownStackItem.parent.childKinds.values()], when: HookWhen.AFTER }), exception)
+                }
+                catch (ex) {
+                    if (ex !== exception)
+                        throw ex;
+                }
             }
         }
     }
@@ -281,12 +304,6 @@ export class Testish {
                 await Promise.resolve();
 
                 let exception: Error = undefined;
-                try {
-                    await this.runHooks(this.findHooks({ ownStackItem: this.stackItem, when: HookOnceWhen.BEFORE, blockType }))
-                }
-                catch (ex) {
-                    exception = ex;
-                }
 
                 const parentAapi = this.aapi;
                 const ownStackItem = this.push({

@@ -565,6 +565,50 @@ describe('Testish', () => {
             ]);
 
         });
+        it('should run after', async () => {
+            const { api, events } = createApi();
+
+            api.describe('a', () => {
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER });
+                api.describe('b', () => {
+                });
+                api.it('1', () => {
+                });
+            });
+            api.it('2', () => {
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: undefined, when: HookWhen.AFTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: undefined, when: HookWhen.AFTER },
+            ]);
+
+        });
 
     });
 });
+
+// TODO: Tidy up Testish and divide into functions for each of
+/*
+  runBefore
+  runBeforeEach
+  pushStack
+  runCallback
+  runAfter
+  popStack
+  runAfterEach
+
+  note that "done" will be responsible for running runAfter for the root node
+  note that runBefore and runAfter look to be order asymmetrically
+ */
