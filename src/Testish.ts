@@ -93,7 +93,7 @@ export class Testish {
         assert(found === stack);
     }
 
-    private findEachHooks({ownStackItem, blockType, when} : { ownStackItem: Stack; blockType: BlockType; when: HookWhen}) {
+    private findHooks({ownStackItem, blockType, when} : { ownStackItem: Stack; blockType: BlockType; when: HookWhen}) {
         const hooks : Hook[] = [];
 
         // Only DESCRIBE and IT have hooks so far
@@ -151,7 +151,8 @@ export class Testish {
                                 context: ownStackItem.context
                             },
                             evaluateNested: false,
-                            discardExceptions: false
+                            discardExceptions: false,
+                            skip: undefined
                         });
                     },
                     async (exception) => {
@@ -170,7 +171,7 @@ export class Testish {
             }, exception ? Promise.reject(exception) : Promise.resolve());
     }
 
-    private async run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Omit<Event, "eventType">; aapi: AbortApi}) {
+    private async run({callback, blockType, description, discardExceptions, evaluateNested, timeout, reportDefaults, aapi, skip}: { callback: Callback; blockType: BlockType; description: string; discardExceptions: boolean; evaluateNested; timeout: number; reportDefaults: Omit<Event, "eventType">; aapi: AbortApi; skip: Error}) {
         const ownStackItem = this.stackItem;
 
         const report = (eventType: EventType, exception?: Error) : Promise<void> =>
@@ -178,10 +179,10 @@ export class Testish {
 
         const EX_SKIP: Error = new Error('skip');
 
-        let exception: Error = undefined;
+        let exception: Error = skip || (aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
 
         try {
-            await this.runHooks(this.findEachHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.BEFORE_EACH}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
+            await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.BEFORE_EACH}), exception);
         } catch (ex) {
             exception = ex;
         }
@@ -259,7 +260,7 @@ export class Testish {
                 await report(EventType.LEAVE_SUCCESS);
 
             try {
-                await this.runHooks(this.findEachHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.AFTER_EACH}), exception);
+                await this.runHooks(this.findHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.AFTER_EACH}), exception);
             } catch (ex) {
                 if (ex !== exception)
                     throw ex;
@@ -278,6 +279,14 @@ export class Testish {
         return this.promise = this.promise.then(
             async () => {
                 await Promise.resolve();
+
+                let exception: Error = undefined;
+                try {
+                    await this.runHooks(this.findHooks({ ownStackItem: this.stackItem, when: HookOnceWhen.BEFORE, blockType }))
+                }
+                catch (ex) {
+                    exception = ex;
+                }
 
                 const parentAapi = this.aapi;
                 const ownStackItem = this.push({
@@ -298,7 +307,8 @@ export class Testish {
                         description,
                         blockType,
                         aapi: parentAapi,
-                        timeout
+                        timeout,
+                        skip: exception
                     })
                 }
                 finally {
