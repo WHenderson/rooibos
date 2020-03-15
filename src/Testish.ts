@@ -40,7 +40,7 @@ export class Testish {
     }
 
     private get stackItem() { return this.stack.length && this.stack[0]; }
-    private get parentStackItem() { return this.stack.length > 1 ? this.stack[1] : undefined; }
+    private get parentStackItem() { return this.stackItem && this.stackItem.parent; }
     private get promise() { return this.stackItem.promise; }
     private set promise(val) { this.stackItem.promise = val; }
     private get context() { return this.stack.length && this.stackItem.context; }
@@ -80,7 +80,8 @@ export class Testish {
                 parent: this.context,
                 data: {},
                 get aapi() { return stackItem.aapi; }
-            })
+            }),
+            parent: this.stackItem
         };
 
         this.stack.unshift(stackItem);
@@ -92,17 +93,15 @@ export class Testish {
         assert(found === stack);
     }
 
-    private findEachHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
+    private findEachHooks({ownStackItem, blockType, when} : { ownStackItem: Stack; blockType: BlockType; when: HookWhen}) {
         const hooks : Hook[] = [];
 
         // Only DESCRIBE and IT have hooks so far
         if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
             return hooks;
 
-        const parentStackItem = this.parentStackItem;
-
         for (let stackItem of this.stack.slice().reverse()) {
-            for (let hook of stackItem.hooks) {
+            for (let hook of stackItem.hooks.slice()) {
                 // blockType
                 if (hook.blockTypes && hook.blockTypes.length && !hook.blockTypes.includes(blockType))
                     continue;
@@ -115,11 +114,19 @@ export class Testish {
                     continue;
 
                 // depth
-                if (!(hook.depth === HookDepth.ALL) && !(stackItem === parentStackItem && hook.depth === HookDepth.SHALLOW) && !(stackItem !== parentStackItem && hook.depth === HookDepth.DEEP))
+                const isShallow = stackItem === ownStackItem;
+                if ((hook.depth !== HookDepth.ALL) && (!isShallow || hook.depth !== HookDepth.SHALLOW) && (isShallow || hook.depth !== HookDepth.DEEP))
                     continue;
 
                 hooks.push(hook);
+
+                // remove 'once' hooks as soon as they are being used
+                if (isHookOnce(when))
+                    stackItem.hooks.splice(stackItem.hooks.indexOf(hook), 1)
             }
+
+            if (stackItem === ownStackItem)
+                break;
         }
         return hooks;
     }
@@ -174,7 +181,7 @@ export class Testish {
         let exception: Error = undefined;
 
         try {
-            await this.runHooks(this.findEachHooks({blockType, when: HookWhen.BEFORE_EACH}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
+            await this.runHooks(this.findEachHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.BEFORE_EACH}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
         } catch (ex) {
             exception = ex;
         }
@@ -252,7 +259,7 @@ export class Testish {
                 await report(EventType.LEAVE_SUCCESS);
 
             try {
-                await this.runHooks(this.findEachHooks({blockType, when: HookWhen.AFTER_EACH}), exception);
+                await this.runHooks(this.findEachHooks({ownStackItem: ownStackItem.parent, blockType, when: HookWhen.AFTER_EACH}), exception);
             } catch (ex) {
                 if (ex !== exception)
                     throw ex;

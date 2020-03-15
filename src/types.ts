@@ -97,6 +97,7 @@ export interface Stack {
     hooks: Hook[];
     context: Context;
     aapi: AbortApi;
+    parent: Stack;
 }
 
 export interface Reporter {
