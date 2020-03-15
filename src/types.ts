@@ -9,11 +9,28 @@ export enum BlockType {
     HOOK = 'hook'
 }
 
-export enum HookWhen {
+export enum HookOnceWhen {
     BEFORE = 'before',
     AFTER = 'after',
-    BOTH = 'both'
+    BEFORE_AND_AFTER = 'before&after',
 }
+
+export enum HookEachWhen {
+    BEFORE_EACH = 'beforeEach',
+    AFTER_EACH = 'afterEach',
+    BEFORE_AND_AFTER_EACH = 'beforeEach&afterEach'
+}
+
+export const HookWhen = { ...HookOnceWhen, ...HookEachWhen };
+export type HookWhen = HookOnceWhen | HookEachWhen;
+
+export function isHookOnce(when: HookWhen): when is HookOnceWhen {
+    return Object.values(HookOnceWhen).includes(when as HookOnceWhen);
+}
+export function isHookEach(when: HookWhen): when is HookEachWhen {
+    return Object.values(HookEachWhen).includes(when as HookEachWhen);
+}
+
 
 export enum HookDepth {
     SHALLOW = 'shallow',
@@ -31,23 +48,6 @@ export interface HookOptions {
 
 export interface HookContextOptions extends HookOptions {
     creationContext: Context;
-}
-
-export enum HookType {
-    TARGET_NEITHER = 0,
-    TARGET_DESCRIBE = 1,
-    TARGET_IT = 2,
-    TARGET_BOTH = TARGET_DESCRIBE | TARGET_IT,
-
-    WHEN_NEITHER = 0,
-    WHEN_BEFORE = 4,
-    WHEN_AFTER = 8,
-    WHEN_BOTH = WHEN_BEFORE | WHEN_AFTER,
-
-    NEST_NEITHER = 0,
-    NEST_SHALLOW = 16,
-    NEST_DEEP = 32,
-    NEST_BOTH = NEST_SHALLOW | NEST_DEEP
 }
 
 export enum EventType {

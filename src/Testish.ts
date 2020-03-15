@@ -5,8 +5,12 @@ import {
     EventType,
     Hook,
     HookDepth,
+    HookEachWhen,
+    HookOnceWhen,
     HookOptions,
     HookWhen,
+    isHookEach,
+    isHookOnce,
     JsonValue,
     Reporter,
     Stack
@@ -88,7 +92,7 @@ export class Testish {
         assert(found === stack);
     }
 
-    private findHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
+    private findEachHooks({blockType, when} : { blockType: BlockType, when: HookWhen}) {
         const hooks : Hook[] = [];
 
         // Only DESCRIBE and IT have hooks so far
@@ -104,7 +108,10 @@ export class Testish {
                     continue;
 
                 // when
-                if (hook.when !== when && hook.when !== HookWhen.BOTH)
+                if (hook.when !== when && (
+                    (isHookOnce(when) && hook.when !== HookOnceWhen.BEFORE_AND_AFTER) ||
+                    (isHookEach(when) && hook.when !== HookEachWhen.BEFORE_AND_AFTER_EACH)
+                ))
                     continue;
 
                 // depth
@@ -167,7 +174,7 @@ export class Testish {
         let exception: Error = undefined;
 
         try {
-            await this.runHooks(this.findHooks({blockType, when: HookWhen.BEFORE}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
+            await this.runHooks(this.findEachHooks({blockType, when: HookWhen.BEFORE_EACH}), aapi.state !== ABORT_STATE.NONE ? EX_SKIP : undefined);
         } catch (ex) {
             exception = ex;
         }
@@ -245,7 +252,7 @@ export class Testish {
                 await report(EventType.LEAVE_SUCCESS);
 
             try {
-                await this.runHooks(this.findHooks({blockType, when: HookWhen.AFTER}), exception);
+                await this.runHooks(this.findEachHooks({blockType, when: HookWhen.AFTER_EACH}), exception);
             } catch (ex) {
                 if (ex !== exception)
                     throw ex;
@@ -364,7 +371,7 @@ export class Testish {
     hook(description: string, callback: Callback, options?: Partial<HookOptions>) : void {
         const opts : Hook = Object.assign({
             blockTypes: [],
-            when: HookWhen.BOTH,
+            when: HookWhen.BEFORE_AND_AFTER_EACH,
             depth: HookDepth.SHALLOW,
             timeout: Timeout.INF,
             description,
