@@ -36,6 +36,7 @@ export class Testish {
     }
 
     private get stackItem() { return this.stack.length && this.stack[0]; }
+    private get parentStackItem() { return this.stack.length > 1 ? this.stack[1] : undefined; }
     private get promise() { return this.stackItem.promise; }
     private set promise(val) { this.stackItem.promise = val; }
     private get context() { return this.stack.length && this.stackItem.context; }
@@ -94,7 +95,8 @@ export class Testish {
         if (blockType !== BlockType.DESCRIBE && blockType !== BlockType.IT)
             return hooks;
 
-        const ownStackItem = this.stackItem;
+        const parentStackItem = this.parentStackItem;
+
         for (let stackItem of this.stack.slice().reverse()) {
             for (let hook of stackItem.hooks) {
                 // blockType
@@ -106,7 +108,7 @@ export class Testish {
                     continue;
 
                 // depth
-                if ((hook.depth !== HookDepth.ALL) && (stackItem === ownStackItem && hook.depth !== HookDepth.SHALLOW) && (stackItem !== ownStackItem && hook.depth !== HookDepth.DEEP))
+                if (!(hook.depth === HookDepth.ALL) && !(stackItem === parentStackItem && hook.depth === HookDepth.SHALLOW) && !(stackItem !== parentStackItem && hook.depth === HookDepth.DEEP))
                     continue;
 
                 hooks.push(hook);

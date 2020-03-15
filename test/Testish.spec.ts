@@ -441,5 +441,99 @@ describe('Testish', () => {
             ]);
 
         });
+        it('should run in order', async () => {
+            const { api, events } = createApi();
+
+            api.hook('x', () => {
+            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE });
+            api.describe('a', () => {
+                api.hook('y', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE });
+                api.describe('b', () => {
+                    api.hook('z', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE });
+                    api.it('1', () => {
+                    });
+                });
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'a', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'a', when: HookWhen.BEFORE },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'b', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'b', when: HookWhen.BEFORE },
+                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'b', when: HookWhen.BEFORE },
+                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'b', when: HookWhen.BEFORE },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '1', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '1', when: HookWhen.BEFORE },
+                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '1', when: HookWhen.BEFORE },
+                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '1', when: HookWhen.BEFORE },
+                { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '1', when: HookWhen.BEFORE },
+                { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '1', when: HookWhen.BEFORE },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+
+        });
+        it('should run only on deep blocks', async () => {
+            const { api, events } = createApi();
+
+            api.hook('x', () => {
+            }, { depth: HookDepth.DEEP, when: HookWhen.BEFORE });
+            api.describe('a', () => {
+                api.describe('b', () => {
+                    api.it('1', () => {
+                    });
+                });
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'b', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'b', when: HookWhen.BEFORE },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: '1', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: '1', when: HookWhen.BEFORE },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+
+        });
+        it('should run only on shallow blocks', async () => {
+            const { api, events } = createApi();
+
+            api.hook('x', () => {
+            }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE });
+            api.describe('a', () => {
+                api.describe('b', () => {
+                    api.it('1', () => {
+                    });
+                });
+            });
+
+            await api.done();
+
+            expect(simplifyEvents(events)).to.deep.equal([
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, target: 'a', when: HookWhen.BEFORE },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE_SUCCESS, target: 'a', when: HookWhen.BEFORE },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE_SUCCESS },
+            ]);
+
+        });
     });
 });
