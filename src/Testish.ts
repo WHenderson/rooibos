@@ -208,12 +208,12 @@ export class Testish {
         });
     }
 
-    private async _stepUnusedHook(ownerState: State, triggerState: State, hook: HookContextDetails, exception?: Error) {
+    private async _stepUnusedHook(ownerState: State, triggerState: State | undefined, hook: HookContextDetails, exception?: Error) {
         const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description);
 
         const context = ownState.context as HookContext;
         context.creator = hook.creationState.context;
-        context.trigger = triggerState.context;
+        context.trigger = triggerState && triggerState.context;
 
         await this._stepUnused(hook.hook.callback, hook.hook.description, {
             ownState,
@@ -285,10 +285,10 @@ export class Testish {
             )
             .map(hook => ({ hook, creationState: ownerState }));
 
-        // TODO: If a hook targets multiple block types, we want to execute after the last target trigger
 
         let filteredHooks : HookContextDetails[] = [];
 
+        // If a hook targets multiple block types, we want to execute after the last target trigger
         const findLastIndex = <T>(arr: T[], predicate: (val: T, idx: number, arr: T[]) => boolean) => {
             for (let [idx, val] of [...arr.entries()].reverse()) {
                 if (predicate(val, idx, arr))
@@ -303,10 +303,10 @@ export class Testish {
                     .finally(() => {
                         filteredHooks = hooks.filter(hook =>
                             !hook.hook.executed && (
-                                hook.hook.blockTypes.length === 1 ||
                                 iTrigger === findLastIndex(
                                     ownerState.triggers,
                                     trigger =>
+                                        (hook.hook.depth === HookDepth.ALL || hook.hook.depth == trigger.depth) &&
                                         hook.hook.blockTypes.indexOf(trigger.state.blockType) !== -1
                                 )
                             )
@@ -354,17 +354,19 @@ export class Testish {
         return this._stepRunAfterOnceHooks(ownerState, exception);
     }
 
-    private async _stepUnusedHooks(ownerState: State, triggerState: State, exception?: Error) {
-        const hooks : HookContextDetails[] = triggerState.hooks.filter(hook => !hook.executed).map(hook => ({
+    private async _stepUnusedHooks(ownState: State, exception?: Error) {
+        const hooks : HookContextDetails[] = ownState.hooks.filter(hook => !hook.executed).map(hook => ({
             hook,
-            creationState: triggerState
+            creationState: ownState
         }));
 
         await hooks
             .reduce(async (cur, hook) => {
-                await cur;
-                await this._stepUnusedHook(ownerState, triggerState, hook, exception);
-            }, Promise.resolve());
+                return cur.then(
+                    async () => await this._stepUnusedHook(ownState, undefined, hook) ,
+                    async (exception) => await this._stepUnusedHook(ownState, undefined, hook, exception)
+                );
+            }, exception ? Promise.reject(exception) : Promise.resolve());
     }
     
     private async _stepUnused(
@@ -463,12 +465,23 @@ export class Testish {
                     // Evaluate nested
                     if (options.ownState) {
                         await options.ownState.promise
+                            // afterOnce
                             .then(
                                 async () => {
                                     await this._stepRunAfterOnceHooks(options.ownState);
                                 },
                                 async (exception) => {
                                     await this._stepSkipAfterOnceHooks(options.ownState, exception);
+                                    throw exception;
+                                }
+                            )
+                            // unused
+                            .then(
+                                async () => {
+                                    await this._stepUnusedHooks(options.ownState);
+                                },
+                                async (exception) => {
+                                    await this._stepUnusedHooks(options.ownState, exception);
                                     throw exception;
                                 }
                             );
@@ -591,26 +604,6 @@ export class Testish {
                     throw exception;
                 }
             )
-            // afterOnce
-            //.then(
-            //    async () => {
-            //        await this._stepRunAfterOnceHooks(ownState);
-            //    },
-            //    async (exception) => {
-            //        await this._stepSkipAfterOnceHooks(ownState, exception);
-            //        throw exception;
-            //    }
-            //)
-            // unused
-            .then(
-                async () => {
-                    await this._stepUnusedHooks(ownerState, ownState);
-                },
-                async (exception) => {
-                    await this._stepUnusedHooks(ownerState, ownState, exception);
-                    throw exception;
-                }
-            )
             // afterEach
             .then(
                 async () => {
@@ -709,6 +702,16 @@ export class Testish {
                 },
                 async (exception) => {
                     await this._stepSkipAfterOnceHooks(this.state, exception);
+                    throw exception;
+                }
+            )
+            // unused
+            .then(
+                async () => {
+                    await this._stepUnusedHooks(this.state);
+                },
+                async (exception) => {
+                    await this._stepUnusedHooks(this.state, exception);
                     throw exception;
                 }
             )

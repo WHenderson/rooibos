@@ -401,309 +401,737 @@ describe('Testish', () => {
     });
 
     describe('hook', () => {
-        it('should run before each', async () => {
-            const { api, events } = createApi();
+        describe('beforeOnce', () => {
+            it('should run first', async () => {
+                const { api, events } = createApi();
 
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
-                });
-                api.it('1', () => {
-                });
-            });
-            api.it('2', () => {
-            });
-
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
-       });
-        it('should run after each', async () => {
-            const { api, events } = createApi();
-
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
-                });
-                api.it('1', () => {
-                });
-            });
-            api.it('2', () => {
-            });
-
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
-        });
-        it('should run in order', async () => {
-            const { api, events } = createApi();
-
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.hook('y', () => {
-                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-                api.describe('b', () => {
-                    api.hook('z', () => {
-                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.describe('b', () => {
+                    });
                     api.it('1', () => {
                     });
                 });
+                api.it('2', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
+            it('should run before', async () => {
+                const { api, events } = createApi();
 
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
-        });
-        it('should run only on deep blocks', async () => {
-            const { api, events } = createApi();
-
-            api.hook('x', () => {
-            }, { depth: HookDepth.DEEP, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
+                api.describe('a', () => {
+                    api.hook('x', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
                     api.it('1', () => {
                     });
                 });
+                api.it('2', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
+            it('should run in order', async () => {
+                const { api, events } = createApi();
 
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
-        });
-        it('should run only on shallow blocks', async () => {
-            const { api, events } = createApi();
-
-            api.hook('x', () => {
-            }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
-                    api.it('1', () => {
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                        api.hook('z', () => {
+                        }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                        api.it('1', () => {
+                        });
                     });
                 });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
+            it('should ghost', async () => {
+                const { api, events } = createApi();
 
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
-        });
-        it('should run before', async () => {
-            const { api, events } = createApi();
-
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
                 });
-                api.it('1', () => {
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+            });
+            it('should only run shallow', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                        api.it('1', () => {
+                        });
+                    });
+                    api.it('2', () => {
+                    });
                 });
+                api.it('3', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-            api.it('2', () => {
+            it('should only run deep', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.DEEP, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.DEEP, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                    api.describe('b', () => {
+                        api.it('1', () => {
+                        });
+                    });
+                    api.it('2', () => {
+                    });
+                });
+                api.it('3', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
         });
-        it('should run after', async () => {
-            const { api, events } = createApi();
+        describe('afterOnce', () => {
+            it('should run last', async () => {
+                const { api, events } = createApi();
 
-            api.describe('a', () => {
                 api.hook('x', () => {
                 }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-                api.describe('b', () => {
+                api.describe('a', () => {
+                    api.describe('b', () => {
+                    });
+                    api.it('1', () => {
+                    });
                 });
+                api.it('2', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should run after', async () => {
+                const { api, events } = createApi();
+
+                api.describe('a', () => {
+                    api.hook('x', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
+                    api.it('1', () => {
+                    });
+                });
+                api.it('2', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should run in order', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                        api.hook('z', () => {
+                        }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                        api.it('1', () => {
+                        });
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should ghost', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                    api.describe('b', () => {
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should only run shallow', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.SHALLOW, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
                 api.it('1', () => {
                 });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.SHALLOW, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.it('2', () => {
+                    });
+                    api.describe('b', () => {
+                        api.it('3', () => {
+                        });
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-            api.it('2', () => {
+            it('should only run deep', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.DEEP, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                api.it('1', () => {
+                });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.DEEP, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.IT ], timeout: undefined });
+                    api.it('2', () => {
+                    });
+                    api.describe('b', () => {
+                        api.it('3', () => {
+                        });
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-
-            await api.done();
-
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
-
         });
-        it('should run first', async () => {
-            const { api, events } = createApi();
+        describe('beforeEach', () => {
+            it('should run before each', async () => {
+                const { api, events } = createApi();
 
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.describe('b', () => {
+                    });
+                    api.it('1', () => {
+                    });
                 });
-                api.it('1', () => {
+                api.it('2', () => {
                 });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-            api.it('2', () => {
+            it('should run in order', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                        api.hook('z', () => {
+                        }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                        api.it('1', () => {
+                        });
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
+            it('should ghost', async () => {
+                const { api, events } = createApi();
 
-            await api.done();
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_EACH, blockTypes: [BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
+                });
 
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
+                await api.done();
 
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should only run shallow', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.IT ], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.SHALLOW, when: HookWhen.BEFORE_EACH, blockTypes: [ BlockType.IT ], timeout: undefined });
+                    api.describe('b', () => {
+                        api.it('1', () => {
+                        });
+                    });
+                    api.it('2', () => {
+                    });
+                });
+                api.it('3', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
         });
-        it('should run last', async () => {
-            const { api, events } = createApi();
+        describe('afterEach', () => {
+            it('should run after each', async () => {
+                const { api, events } = createApi();
 
-            api.hook('x', () => {
-            }, { depth: HookDepth.ALL, when: HookWhen.AFTER_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
-            api.describe('a', () => {
-                api.describe('b', () => {
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
+                    api.it('1', () => {
+                    });
                 });
-                api.it('1', () => {
+                api.it('2', () => {
                 });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
-            api.it('2', () => {
+            it('should run in order', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                        api.hook('z', () => {
+                        }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+                        api.it('1', () => {
+                        });
+                    });
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'z', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '1' } } },
+
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'b' } } },
+
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
             });
+            it('should ghost', async () => {
+                const { api, events } = createApi();
 
-            await api.done();
+                api.hook('x', () => {
+                }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.IT], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.ALL, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.IT], timeout: undefined });
+                    api.describe('b', () => {
+                    });
+                });
 
-            expect(events).to.deep.equal(mutatingMerge([
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
-            ], events));
+                await api.done();
 
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED, context: { trigger: undefined } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
+            it('should only run shallow', async () => {
+                const { api, events } = createApi();
+
+                api.hook('x', () => {
+                }, { depth: HookDepth.SHALLOW, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.IT ], timeout: undefined });
+                api.describe('a', () => {
+                    api.hook('y', () => {
+                    }, { depth: HookDepth.SHALLOW, when: HookWhen.AFTER_EACH, blockTypes: [ BlockType.IT ], timeout: undefined });
+                    api.describe('b', () => {
+                        api.it('1', () => {
+                        });
+                    });
+                    api.it('2', () => {
+                    });
+                });
+                api.it('3', () => {
+                });
+
+                await api.done();
+
+                expect(events).to.deep.equal(mutatingMerge([
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+                    { description: 'y', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '2' } } },
+
+                    { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                    { description: '3', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: '3' } } },
+                    { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                ], events));
+
+            });
         });
     });
 });

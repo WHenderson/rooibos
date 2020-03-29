@@ -1,4 +1,14 @@
-import {BlockType, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
+import {
+    BlockType,
+    Context,
+    Event,
+    EventStatusType,
+    EventType,
+    isEventBlock,
+    isEventHook,
+    isEventNote,
+    Reporter
+} from "../types";
 
 export class VerboseReporter implements Reporter {
 
@@ -39,17 +49,21 @@ export class VerboseReporter implements Reporter {
         const eventStatusTypeSymbol = VerboseReporter.eventStatusTypeMap[event.eventStatusType];
 
         let description = event.description ? `- ${event.description}` : '<anonymous>';
+        let blockType = `${event.blockType}`;
 
         if (isEventBlock(event)) {
 
         }
         if (isEventHook(event)) {
-            description = `${description} (parent: ${event.context.parent.description}, creator: ${event.context.creator.description}, trigger: ${event.context.trigger.description})`;
+            const getDesc = (context : Context) => !context ? '<none>': !context.description ? '<anonymous>' : context.description;
+            description = `${description} (parent: ${getDesc(event.context.parent)}, creator: ${getDesc(event.context.creator)}, trigger: ${getDesc(event.context.trigger)})`;
+
+            blockType = `${blockType} ${event.hookOptions.when} ${event.hookOptions.depth}`;
         }
-        else if (isEventNote(event)) {
+        if (isEventNote(event)) {
 
         }
 
-        console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${event.blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
+        console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
     }
 }
