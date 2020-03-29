@@ -1,91 +1,22 @@
-import {BlockType, Event, EventType, Reporter} from "../types";
-
-export interface BlockItem {
-    blockValue: string;
-    eventTypeMap: Map<EventType, string>;
-}
+import {BlockType, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
 
 export class VerboseReporter implements Reporter {
 
-    public static blockTypeMap = new Map<BlockType, BlockItem>([
-        [
-            BlockType.SCRIPT,
-            {
-                blockValue: 'script',
-                eventTypeMap: new Map<EventType, string>([
-                    [EventType.SKIP, '↷'],
-                    [EventType.ENTER, '⇒'],
-                    [EventType.TIMEOUT, '⏰'],
-                    [EventType.ABORT, '🛑'],
-                    [EventType.EXCEPTION, '⚠'],
-                    [EventType.LEAVE_SUCCESS, '⇐'],
-                    [EventType.LEAVE_EXCEPTION, '⇍'],
-                    [EventType.LEAVE_TIMEOUT, '⇍'],
-                    [EventType.LEAVE_ABORT, '⇍'],
-                ])
-            }
-        ],
-        [
-            BlockType.DESCRIBE,
-            {
-                blockValue: 'describe',
-                eventTypeMap: new Map<EventType, string>([
-                    [EventType.SKIP, '↷'],
-                    [EventType.ENTER, '⇒'],
-                    [EventType.TIMEOUT, '⏰'],
-                    [EventType.ABORT, '🛑'],
-                    [EventType.EXCEPTION, '⚠'],
-                    [EventType.LEAVE_SUCCESS, '⇐'],
-                    [EventType.LEAVE_EXCEPTION, '⇍'],
-                    [EventType.LEAVE_TIMEOUT, '⇍'],
-                    [EventType.LEAVE_ABORT, '⇍'],
-                ])
-            }
-        ],
-        [
-            BlockType.IT,
-            {
-                blockValue: 'it',
-                eventTypeMap: new Map<EventType, string>([
-                    [EventType.SKIP, '↷'],
-                    [EventType.ENTER, '⎆'],
-                    [EventType.TIMEOUT, '⏰'],
-                    [EventType.ABORT, '🛑'],
-                    [EventType.EXCEPTION, '⚠'],
-                    [EventType.LEAVE_SUCCESS, '✓'],
-                    [EventType.LEAVE_EXCEPTION, '✗'],
-                    [EventType.LEAVE_TIMEOUT, '✗'],
-                    [EventType.LEAVE_ABORT, '✗'],
-                ])
-            }
-        ],
-        [
-            BlockType.NOTE,
-            {
-                blockValue: 'note',
-                eventTypeMap: new Map<EventType, string>([
-                    [EventType.NOTE, '📝']
-                ])
-            }
-        ],
-        [
-            BlockType.HOOK,
-            {
-                blockValue: 'hook',
-                eventTypeMap: new Map<EventType, string>([
-                    [EventType.SKIP, '↷'],
-                    [EventType.ENTER, '⇒'],
-                    [EventType.TIMEOUT, '⏰'],
-                    [EventType.ABORT, '🛑'],
-                    [EventType.EXCEPTION, '⚠'],
-                    [EventType.LEAVE_SUCCESS, '⇐'],
-                    [EventType.LEAVE_EXCEPTION, '⇍'],
-                    [EventType.LEAVE_TIMEOUT, '⇍'],
-                    [EventType.LEAVE_ABORT, '⇍'],
-                ])
-            }
-        ]
-    ]);
+    private static eventTypeMap : { [key in EventType]: string } = {
+        [EventType.SKIP] : '↷',
+        [EventType.ENTER]: '⇒',
+        [EventType.LEAVE]: '⇐',
+        [EventType.NOTE]: '📝'
+    };
+
+    private static eventStatusTypeMap : { [key in EventStatusType]: string } = {
+        [EventStatusType.SUCCESS]: '✓',
+        [EventStatusType.TIMEOUT]: '⏰',
+        [EventStatusType.ABORT]: '🛑',
+        [EventStatusType.EXCEPTION]: '⚠',
+        [EventStatusType.UNUSED]: '👻'
+    };
+
 
     private readonly log : (message: string) => void | PromiseLike<void>;
     private readonly indent : boolean;
@@ -104,29 +35,21 @@ export class VerboseReporter implements Reporter {
     }
 
     async on(event: Event) {
+        const eventTypeSymbol = VerboseReporter.eventTypeMap[event.eventType];
+        const eventStatusTypeSymbol = VerboseReporter.eventStatusTypeMap[event.eventStatusType];
 
-        const strIndent = this.indent ? (() => {
-            let count = 0;
-            let context = event.context.parent;
-            while (context.parent) {
-                ++count;
-                context = context.parent;
-            }
-            return ''.padStart(count, ' ');
-        })() : '';
-        const blockItem = VerboseReporter.blockTypeMap.get(event.blockType) || { blockValue: event.blockType, eventTypeMap: new Map()};
-        const strBlockType = blockItem.blockValue;
-        const strEventType = blockItem.eventTypeMap.get(event.eventType) || event.eventType;
-        const description = (event.eventType === EventType.NOTE ? (event.id + ' - ') : '') + event.description;
-        const suffix = (() => {
-            if (event.exception)
-                return `: ${event.exception.message}`;
-            if (event.eventType === EventType.NOTE)
-                return `: ${JSON.stringify(event.value)}`;
-            if (event.blockType === BlockType.HOOK)
-                return `: ${event.hookOptions.when} (${event.context.description}) <= (${event.hookOptions.creationContext.description || 'root'})`;
-            return '';
-        })();
-        await this.log(`${strIndent}${strEventType} ${strBlockType} - ${description}${suffix}`);
+        let description = event.description ? `- ${event.description}` : '<anonymous>';
+
+        if (isEventBlock(event)) {
+
+        }
+        if (isEventHook(event)) {
+            description = `${description} (parent: ${event.context.parent.description}, creator: ${event.context.creator.description}, target: ${event.context.trigger.description})`;
+        }
+        else if (isEventNote(event)) {
+
+        }
+
+        console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${event.blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
     }
 }

@@ -10,15 +10,13 @@ export enum BlockType {
 }
 
 export enum HookOnceWhen {
-    BEFORE = 'before',
-    AFTER = 'after',
-    BEFORE_AND_AFTER = 'before&after',
+    BEFORE_ONCE = 'beforeOnce',
+    AFTER_ONCE = 'afterOnce'
 }
 
 export enum HookEachWhen {
     BEFORE_EACH = 'beforeEach',
-    AFTER_EACH = 'afterEach',
-    BEFORE_AND_AFTER_EACH = 'beforeEach&afterEach'
+    AFTER_EACH = 'afterEach'
 }
 
 export const HookWhen = { ...HookOnceWhen, ...HookEachWhen };
@@ -30,7 +28,12 @@ export function isHookOnce(when: HookWhen): when is HookOnceWhen {
 export function isHookEach(when: HookWhen): when is HookEachWhen {
     return Object.values(HookEachWhen).includes(when as HookEachWhen);
 }
-
+export function isHookBefore(when: HookWhen) : boolean {
+    return when === HookEachWhen.BEFORE_EACH || when === HookOnceWhen.BEFORE_ONCE;
+}
+export function isHookAfter(when: HookWhen) : boolean {
+    return when === HookEachWhen.AFTER_EACH || when === HookOnceWhen.AFTER_ONCE;
+}
 
 export enum HookDepth {
     SHALLOW = 'shallow',
@@ -38,67 +41,111 @@ export enum HookDepth {
     ALL = 'all'
 }
 
+export type HookCallback = (context: HookContext) => void | PromiseLike<void>;
+
 export interface HookOptions {
-    description: string;
     blockTypes: BlockType[];
     when: HookWhen;
     depth: HookDepth;
     timeout: number;
 }
 
-export interface HookContextOptions extends HookOptions {
-    creationContext: Context;
+export interface HookDetails extends HookOptions {
+    description: string;
+    callback: HookCallback;
+    executed: boolean;
+}
+
+export interface HookContextDetails {
+    hook: HookDetails;
+    creationState: State;
 }
 
 export enum EventType {
     SKIP = 'skip',
-    NOTE = 'note',
+
     ENTER = 'enter',
+    LEAVE = 'leave',
+
+    NOTE = 'note'
+}
+
+export enum EventStatusType {
+    SUCCESS = 'success',
     TIMEOUT = 'timeout',
     ABORT = 'abort',
     EXCEPTION = 'exception',
-    LEAVE_SUCCESS = 'leave-success',
-    LEAVE_EXCEPTION = 'leave-exception',
-    LEAVE_TIMEOUT = 'leave-timeout',
-    LEAVE_ABORT = 'leave-abort'
+    UNUSED = 'unused'
 }
 
-export interface Event {
-    description: string;
+export interface EventBase {
     blockType: BlockType;
     eventType: EventType;
-    context: Context;
+    eventStatusType: EventStatusType;
     exception?: Error;
-
-    // valid during a hook
-    hookOptions?: HookContextOptions;
-
-    // Valid during a note
-    id?: Guid;
-    value?: JsonValue;
+    description: string;
 }
 
+export interface EventBlock extends EventBase {
+    context: Context;
+}
+
+export function isEventBlock(event: EventBase) : event is EventBlock {
+    return event.blockType === BlockType.SCRIPT
+    || event.blockType === BlockType.DESCRIBE
+    || event.blockType === BlockType.IT;
+}
+
+export interface EventHook extends EventBase {
+    context: HookContext;
+
+    hookOptions: HookOptions;
+}
+
+export function isEventHook(event: EventBase) : event is EventHook {
+    return event.blockType === BlockType.HOOK;
+}
+
+export interface EventNote extends EventBlock {
+    id: Guid;
+    value: JsonValue;
+    context: Context | HookContext;
+}
+
+export function isEventNote(event: EventBase) : event is EventNote {
+    return event.blockType === BlockType.NOTE;
+}
+
+export type Event = EventBlock | EventHook | EventNote;
+
 export interface Context {
-    readonly blockType: BlockType;
-    readonly description: string;
-    readonly parent: Context;
-    readonly data: object;
-    readonly aapi: AbortApi;
+    blockType: BlockType;
+    description: string;
+    parent: Context;
+    data: object;
+    aapi: AbortApi;
+}
+
+export interface HookContext extends Context {
+    creator: Context;
+    trigger: Context;
 }
 
 export type Callback = (context: Context) => void | PromiseLike<void>;
 
-export interface Hook extends HookContextOptions {
-    readonly callback: Callback;
+export interface TriggerState {
+    depth: Exclude<HookDepth, HookDepth.ALL>;
+    state: State;
 }
 
-export interface Stack {
+export interface State {
+    blockType: BlockType;
     promise: Promise<void>;
-    hooks: Hook[];
-    context: Context;
+    hooks: HookDetails[];
+    context: Context | HookContext;
     aapi: AbortApi;
-    parent: Stack;
-    childKinds: Set<BlockType>;
+    parentState: State;
+    triggers: TriggerState[];
 }
 
 export interface Reporter {
