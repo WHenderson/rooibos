@@ -44,7 +44,7 @@ export class VerboseReporter implements Reporter {
 
         }
         if (isEventHook(event)) {
-            description = `${description} (parent: ${event.context.parent.description}, creator: ${event.context.creator.description}, target: ${event.context.trigger.description})`;
+            description = `${description} (parent: ${event.context.parent.description}, creator: ${event.context.creator.description}, trigger: ${event.context.trigger.description})`;
         }
         else if (isEventNote(event)) {
 

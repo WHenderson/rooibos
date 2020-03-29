@@ -531,7 +531,7 @@ export class Testish {
             // beforeOnce
             .then(
                 async () => {
-                    await this._stepRunBeforeOnceHooks(ownerState, ownState); // TODO: is ownerState/parentAapi correct?
+                    await this._stepRunBeforeOnceHooks(ownerState, ownState);
                 },
                 async (exception) => {
                     await this._stepSkipBeforeOnceHooks(ownerState, ownState, exception);
@@ -703,6 +703,15 @@ export class Testish {
 
         return this.state.promise
             .then(() => this.state.promise, () => this.state.promise) // TODO: test that requeuing at the back of the line works
+            .then(
+                async () => {
+                    await this._stepRunAfterOnceHooks(this.state);
+                },
+                async (exception) => {
+                    await this._stepSkipAfterOnceHooks(this.state, exception);
+                    throw exception;
+                }
+            )
             .catch(async (exception) => {
                 await this.report({
                     blockType: BlockType.SCRIPT,

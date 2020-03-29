@@ -641,7 +641,39 @@ describe('Testish', () => {
             ], events));
 
         });
-        it('should run after root', async () => {
+        it('should run first', async () => {
+            const { api, events } = createApi();
+
+            api.hook('x', () => {
+            }, { depth: HookDepth.ALL, when: HookWhen.BEFORE_ONCE, blockTypes: [ BlockType.DESCRIBE, BlockType.IT], timeout: undefined });
+            api.describe('a', () => {
+                api.describe('b', () => {
+                });
+                api.it('1', () => {
+                });
+            });
+            api.it('2', () => {
+            });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                { description: 'x', blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, context: { trigger: { description: 'a' } } },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { description: 'b', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { description: '1', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { description: '2', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+            ], events));
+
+        });
+        it('should run last', async () => {
             const { api, events } = createApi();
 
             api.hook('x', () => {
