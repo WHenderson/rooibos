@@ -365,20 +365,20 @@ describe('Testish', () => {
     });
 
     describe('note', () => {
-       it('should work at each layer', async () => {
+       it('should run in order', async () => {
            const { api, events } = createApi();
 
            const id = Guid.createEmpty();
 
-           await api.note(id, 'global note', 'my value');
+           api.note(id, 'global note', 'my value');
            api.describe('a', async () => {
-               await api.note(id, 'describe note', 'my value');
+               api.note(id, 'describe note', 'my value');
                api.it('b', async () => {
-                   await api.note(id, 'it note', 'my value');
+                   api.note(id, 'it note', 'my value');
                });
-               await api.note(id, 'describe note after', 'my value');
+               api.note(id, 'describe note after', 'my value');
            });
-           await api.note(id, 'global note after', 'my value');
+           api.note(id, 'global note after', 'my value');
 
            await api.done();
 
@@ -386,16 +386,71 @@ describe('Testish', () => {
 
            expect(events).to.deep.equal(mutatingMerge([
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+               { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
+               { description: 'describe note', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'b', blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+               { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
+               { description: 'it note', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'b', blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+               { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
+               { description: 'describe note after', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+               { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
+               { description: 'global note after', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+           ], events));
+       });
+       it('should evaluate callback at execution time', async () => {
+           const { api, events } = createApi();
+
+           const id = Guid.createEmpty();
+
+           let value = 'my initial value';
+           api.note(id, 'global note', () => value);
+           value = 'my final value';
+           await api.done();
+
+           // TODO: Put notes into the queue to ensure they are executed in sibling order
+
+           expect(events).to.deep.equal(mutatingMerge([
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: value },
+               { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+           ], events));
+       });
+       it('should skip evaluation after error', async () => {
+           const { api, events } = createApi();
+
+           const id = Guid.createEmpty();
+
+           const EX = new Error('my error');
+
+           api.note(id, 'a', () => { throw EX });
+           api.note(id, 'b', () => 'evaluated');
+           api.note(id, 'c', 'direct');
+
+           await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+           // TODO: Put notes into the queue to ensure they are executed in sibling order
+
+           expect(events).to.deep.equal(mutatingMerge([
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, exception: EX },
+               { description: 'b', blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined, exception: EX },
+               { description: 'c', blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'direct', exception: EX },
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX},
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION},
            ], events));
        });
     });

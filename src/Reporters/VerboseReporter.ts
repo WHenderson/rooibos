@@ -61,7 +61,7 @@ export class VerboseReporter implements Reporter {
             blockType = `${blockType} ${event.hookOptions.when} ${event.hookOptions.depth}`;
         }
         if (isEventNote(event)) {
-
+            description = `${description} ${event.value === undefined ? '<undefined>' : JSON.stringify(event.value)}`
         }
 
         console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);

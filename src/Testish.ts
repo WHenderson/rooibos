@@ -18,6 +18,7 @@ import {
     HookWhen,
     isHookBefore,
     isHookOnce,
+    isJsonValue,
     JsonValue,
     Reporter,
     State
@@ -632,7 +633,58 @@ export class Testish {
             ;
     }
 
-    private queueNote(id: Guid, description: string, value: JsonValue) {
+    private async _stepRunNote(ownState: State, id: Guid, description: string, value: (() => JsonValue) | JsonValue) {
+        await this.report({
+            blockType: BlockType.NOTE,
+            eventType: EventType.ENTER,
+            eventStatusType: EventStatusType.SUCCESS,
+            description: description,
+            id,
+            context: ownState.context
+        });
+
+        let exception: Error = undefined;
+        try {
+            await this.report({
+                blockType: BlockType.NOTE,
+                eventType: EventType.NOTE,
+                eventStatusType: EventStatusType.SUCCESS,
+                description: description,
+                id,
+                value: isJsonValue(value) ? value : value === undefined ? undefined : value(),
+                context: ownState.context
+            });
+        }
+        catch (ex) {
+            exception = ex;
+            throw ex;
+        }
+        finally {
+            await this.report({
+                blockType: BlockType.NOTE,
+                eventType: EventType.LEAVE,
+                eventStatusType: exception ? EventStatusType.EXCEPTION : EventStatusType.SUCCESS,
+                description: description,
+                id,
+                context: ownState.context,
+                exception
+            });
+        }
+    }
+    private async _stepSkipNote(ownState: State, id: Guid, description: string, value: (() => JsonValue) | JsonValue, exception: Error) {
+        await this.report({
+            blockType: BlockType.NOTE,
+            eventType: EventType.SKIP,
+            eventStatusType: EventStatusType.SUCCESS,
+            description: description,
+            exception,
+            id,
+            value: isJsonValue(value) ? value : undefined,
+            context: ownState.context
+        });
+    }
+
+    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
         return this.state.promise = this.state.promise
@@ -644,27 +696,11 @@ export class Testish {
             )
             .then(
                 async () => {
-                    await this.report({
-                        blockType: BlockType.NOTE,
-                        eventType: EventType.NOTE,
-                        eventStatusType: EventStatusType.SUCCESS,
-                        description: description,
-                        id,
-                        value,
-                        context: ownState.context
-                    });
+                    await this._stepRunNote(ownState, id, description, value);
                 },
                 async (exception) => {
-                    await this.report({
-                        blockType: BlockType.NOTE,
-                        eventType: EventType.NOTE,
-                        eventStatusType: EventStatusType.SUCCESS,
-                        description: description,
-                        exception,
-                        id,
-                        value,
-                        context: ownState.context
-                    });
+                    await this._stepSkipNote(ownState, id, description, value, exception);
+                    throw exception;
                 }
             );
     }
@@ -675,7 +711,9 @@ export class Testish {
     public it(description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
         return this.queueBlock(BlockType.IT, callback, description, options && options.timeout);
     }
-    public note(id: Guid, description: string, value: JsonValue) : Promise<void> {
+    public note(id: Guid, description: string, value: JsonValue) : void | Promise<void>;
+    public note(id: Guid, description: string, value: () => JsonValue) : void | Promise<void>;
+    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue) : void | Promise<void> {
         // TODO: Make this a full blown block with enter/leave/fail conditions
         return this.queueNote(id, description, value);
     }

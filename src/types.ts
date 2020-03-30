@@ -163,3 +163,16 @@ export type JsonValue =
     | JsonPrimitive
     | JsonArray
     | JsonObject;
+
+export function isJsonValue(value: any) : value is JsonValue {
+    return value === null || (
+        value &&
+        (
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'boolean' ||
+            (Array.isArray(value) && value.every(item => isJsonValue(item))) ||
+            (typeof value == 'object' && Object.values(value).every(item => isJsonValue(item)))
+        )
+    );
+}
