@@ -45,11 +45,15 @@ export type HookCallback = (context: HookContext) => void | PromiseLike<void>;
 
 export type HookTargetBlockType = BlockType.DESCRIBE | BlockType.IT;
 
-export interface HookOptions {
+export interface BlockOptions {
+    timeout?: number;
+    tags?: string[];
+}
+
+export interface HookOptions extends BlockOptions {
     blockTypes: HookTargetBlockType[];
     when: HookWhen;
     depth: HookDepth;
-    timeout: number;
 }
 
 export interface HookDetails extends HookOptions {

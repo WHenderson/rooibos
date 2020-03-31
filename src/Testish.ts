@@ -1,4 +1,5 @@
 import {
+    BlockOptions,
     BlockType,
     Callback,
     Context,
@@ -39,6 +40,7 @@ export class Testish {
             undefined,
             BlockType.SCRIPT,
             options.description,
+            {},
             {
                 promise: (options.promise || Promise.resolve())
                     .then(
@@ -79,12 +81,12 @@ export class Testish {
         }
     }
 
-    private createState(parentState: State, blockType: BlockType, description: string, options: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
+    private createState(parentState: State, blockType: BlockType, description: string, options: BlockOptions | HookOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
         const state : State = {
             blockType: blockType,
-            promise: options.promise || Promise.resolve(),
+            promise: stateOptions.promise || Promise.resolve(),
             hooks: [],
-            aapi: options.aapi || new AbortApiPublic(),
+            aapi: stateOptions.aapi || new AbortApiPublic(),
             context: {
                 blockType,
                 description,
@@ -169,7 +171,7 @@ export class Testish {
         if (isHookOnce(hook.hook.when))
             hook.creationState.hooks.splice(hook.creationState.hooks.indexOf(hook.hook));
 
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
 
         const context = ownState.context as HookContext;
         context.creator = hook.creationState.context;
@@ -190,7 +192,7 @@ export class Testish {
     }
 
     private async _stepSkipHook(ownerState: State, triggerState: State, hook: HookContextDetails, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
 
         const context = ownState.context as HookContext;
         context.creator = hook.creationState.context;
@@ -210,7 +212,7 @@ export class Testish {
     }
 
     private async _stepUnusedHook(ownerState: State, triggerState: State | undefined, hook: HookContextDetails, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
 
         const context = ownState.context as HookContext;
         context.creator = hook.creationState.context;
@@ -250,15 +252,6 @@ export class Testish {
                 await cur;
                 await this._stepSkipHook(ownerState, triggerState, hook, exception);
             }, Promise.resolve());
-    }
-
-    private _stepBlockPush(blockType: BlockType, description: string) {
-        const state = this.createState(this.state, blockType, description);
-        return this.push(state);
-    }
-
-    private _stepBlockPop(state: State) {
-        this.pop(state);
     }
 
     private async _stepRunBeforeEachHooks(ownerState: State, triggerState: State) {
@@ -364,7 +357,7 @@ export class Testish {
         await hooks
             .reduce(async (cur, hook) => {
                 return cur.then(
-                    async () => await this._stepUnusedHook(ownState, undefined, hook) ,
+                    async () => await this._stepUnusedHook(ownState, undefined, hook),
                     async (exception) => await this._stepUnusedHook(ownState, undefined, hook, exception)
                 );
             }, exception ? Promise.reject(exception) : Promise.resolve());
@@ -530,7 +523,7 @@ export class Testish {
         }
     }
 
-    private queueBlock(blockType: BlockType, callback: Callback, description: string, timeout: number) {
+    private queueBlock(blockType: BlockType, callback: Callback, description: string, options: BlockOptions) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
 
@@ -539,7 +532,7 @@ export class Testish {
             .finally(
                 () => {
                     ownerState = this.state;
-                    ownState = this.createState(ownerState, blockType, description);
+                    ownState = this.createState(ownerState, blockType, description, options);
                 }
             )
             // beforeOnce
@@ -574,7 +567,7 @@ export class Testish {
                     await this._stepCallback(
                         callback,
                         description,
-                        timeout,
+                        options.timeout,
                         {
                             ownerState,
                             ownState,
@@ -684,14 +677,14 @@ export class Testish {
         });
     }
 
-    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue) {
+    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options: BlockOptions) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
         return this.state.promise = this.state.promise
             .finally(
                 () => {
                     ownerState = this.state;
-                    ownState = this.createState(ownerState, BlockType.NOTE, description);
+                    ownState = this.createState(ownerState, BlockType.NOTE, description, options);
                 }
             )
             .then(
@@ -705,15 +698,15 @@ export class Testish {
             );
     }
 
-    public describe(description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
-        return this.queueBlock(BlockType.DESCRIBE, callback, description, options && options.timeout);
+    public describe(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+        return this.queueBlock(BlockType.DESCRIBE, callback, description, options || {});
     }
-    public it(description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
-        return this.queueBlock(BlockType.IT, callback, description, options && options.timeout);
+    public it(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+        return this.queueBlock(BlockType.IT, callback, description, options || {});
     }
-    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue) : void | Promise<void> {
+    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options?: BlockOptions) : void | Promise<void> {
         // TODO: Make this a full blown block with enter/leave/fail conditions
-        return this.queueNote(id, description, value);
+        return this.queueNote(id, description, value, options);
     }
     public hook(description: string, callback: HookCallback, options: HookOptions) : void {
         this.state.hooks.push(Object.assign(
