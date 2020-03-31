@@ -19,7 +19,8 @@ export type ItFunc =
     ((description: string, callback: Callback) => void | Promise<void>) &
     ((callback: Callback) => void | Promise<void>);
 export type NoteFunc =
-    (id: Guid, description: string, value: (() => JsonValue) | JsonValue) => void | Promise<void>
+    ((id: Guid, description: string, value: (() => JsonValue) | JsonValue) => void | Promise<void>) &
+    ((id: Guid, value: (() => JsonValue) | JsonValue) => void | Promise<void>);
 export type HookFunc =
     ((description: string, callback: HookCallback) => void | Promise<void>) &
     ((callback: HookCallback) => void | Promise<void>);

@@ -1,14 +1,4 @@
-import {
-    BlockType,
-    Context,
-    Event,
-    EventStatusType,
-    EventType,
-    isEventBlock,
-    isEventHook,
-    isEventNote,
-    Reporter
-} from "../types";
+import {Context, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
 
 export class VerboseReporter implements Reporter {
 
@@ -61,7 +51,8 @@ export class VerboseReporter implements Reporter {
             blockType = `${blockType} ${event.hookOptions.when} ${event.hookOptions.depth}`;
         }
         if (isEventNote(event)) {
-            description = `${description} ${event.value === undefined ? '<undefined>' : JSON.stringify(event.value)}`
+            if (event.eventType === EventType.NOTE || event.eventType === EventType.SKIP)
+                description = `${description} ${event.value === undefined ? '<undefined>' : JSON.stringify(event.value)}`
         }
 
         console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
