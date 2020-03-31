@@ -1,29 +1,32 @@
 import {
-    UserOptionsBlock,
     BlockType,
+    BlockTypeHookTarget,
     CallbackBlock,
+    CallbackHook,
     ContextBlock,
+    ContextHook,
+    ErrorAbort,
+    ErrorTimeout,
     Event,
     EventBlock,
     EventHook,
     EventNote,
     EventStatusType,
     EventType,
-    CallbackHook,
-    ContextHook,
-    HookSettingsAndState,
     HookDepth,
     HookEachWhen,
     HookOnceWhen,
-    UserOptionsHook,
-    BlockTypeHookTarget,
+    HookSettingsAndState,
     HookWhen,
     isHookBefore,
     isHookOnce,
     isJsonValue,
     JsonValue,
     Reporter,
-    State, UserOptions, ErrorAbort, ErrorTimeout
+    State,
+    UserOptions,
+    UserOptionsBlock,
+    UserOptionsHook
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -46,23 +49,10 @@ export class Testish {
                 promise: (options.promise || Promise.resolve())
                     .then(
                         async () => {
-                            await this.report({
-                                blockType: BlockType.SCRIPT,
-                                eventType: EventType.ENTER,
-                                eventStatusType: EventStatusType.SUCCESS,
-                                description: options.description,
-                                context: this.rootState.context
-                            });
+                            await this._stepScriptEnter();
                         },
                         async (exception) => {
-                            await this.report({
-                                blockType: BlockType.SCRIPT,
-                                eventType: EventType.ENTER,
-                                eventStatusType: EventStatusType.EXCEPTION,
-                                exception,
-                                description: options.description,
-                                context: this.rootState.context
-                            });
+                            await this._stepScriptEnter(exception);
                             throw exception;
                         }
                     ),
@@ -166,6 +156,28 @@ export class Testish {
         }
 
         return hooks;
+    }
+
+    private async _stepScriptEnter(exception?: Error) {
+        await this.report({
+            blockType: BlockType.SCRIPT,
+            eventType: EventType.ENTER,
+            eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
+            exception,
+            description: this.rootState.context.description,
+            context: this.rootState.context
+        });
+    }
+
+    private async _stepScriptLeave(exception?: Error) {
+        await this.report({
+            blockType: BlockType.SCRIPT,
+            eventType: EventType.LEAVE,
+            eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
+            exception,
+            description: this.rootState.context.description,
+            context: this.rootState.context
+        });
     }
 
     private async _stepRunHook(ownerState: State, triggerState: State, hook: HookSettingsAndState) {
@@ -727,7 +739,9 @@ export class Testish {
             return this.state.promise;
 
         return this.state.promise
+            // move to the end of the queue
             .then(() => this.state.promise, () => this.state.promise) // TODO: test that requeuing at the back of the line works
+            // afterOnce
             .then(
                 async () => {
                     await this._stepRunAfterOnceHooks(this.state);
@@ -747,6 +761,7 @@ export class Testish {
                     throw exception;
                 }
             )
+            // note exceptions
             .catch(async (exception) => {
                 await this.report({
                     blockType: BlockType.SCRIPT,
@@ -758,25 +773,13 @@ export class Testish {
                 });
                 throw exception;
             })
+            // leave
             .then(
                 async () => {
-                    await this.report({
-                        blockType: BlockType.SCRIPT,
-                        eventType: EventType.LEAVE,
-                        eventStatusType: EventStatusType.SUCCESS,
-                        description: this.rootState.context.description,
-                        context: this.rootState.context
-                    });
+                    await this._stepScriptLeave();
                 },
                 async (exception) => {
-                    await this.report({
-                        blockType: BlockType.SCRIPT,
-                        eventType: EventType.LEAVE,
-                        eventStatusType: EventStatusType.EXCEPTION,
-                        exception,
-                        description: this.rootState.context.description,
-                        context: this.rootState.context
-                    });
+                    await this._stepScriptLeave(exception);
                     throw exception;
                 }
             );
