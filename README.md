@@ -5,7 +5,10 @@ TODO:
 - [x] Core API
 - [x] User API
 - [x] Reorganise types into separate files
-- [ ] Standardise type name order - i.e. WhatItIs_WhatItsFor (validate it will do a better job)
+- [x] Standardise type name order - i.e. WhatItIs_WhatItsFor (validate it will do a better job)
+- [ ] Rename variables to match new type names
+- [ ] Create timeout and abort extensions to Error
+- [ ] Determine good name for groups [it, describe, note, script], [hook]?
 - [ ] Add tag API
 - [ ] Add timeouts for notes
 - [ ] Freeze context (aside from .data)

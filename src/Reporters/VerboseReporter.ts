@@ -1,4 +1,4 @@
-import {Context, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
+import {ContextBlock, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
 
 export class VerboseReporter implements Reporter {
 
@@ -45,7 +45,7 @@ export class VerboseReporter implements Reporter {
 
         }
         if (isEventHook(event)) {
-            const getDesc = (context : Context) => !context ? '<none>': !context.description ? '<anonymous>' : context.description;
+            const getDesc = (context : ContextBlock) => !context ? '<none>': !context.description ? '<anonymous>' : context.description;
             description = `${description} (parent: ${getDesc(event.context.parent)}, creator: ${getDesc(event.context.creator)}, trigger: ${getDesc(event.context.trigger)})`;
 
             blockType = `${blockType} ${event.hookOptions.when} ${event.hookOptions.depth}`;

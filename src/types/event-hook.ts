@@ -1,12 +1,12 @@
-import {HookContext} from "./hook-context";
+import {ContextHook} from "./context-hook";
 import {EventBase} from "./event-base";
-import {HookOptions} from "./hook-options";
 import {BlockType} from "./block-type";
+import {UserOptionsHook} from "./user-options-hook";
 
 export interface EventHook extends EventBase {
-    context: HookContext;
+    context: ContextHook;
 
-    hookOptions: HookOptions;
+    hookOptions: UserOptionsHook;
 }
 
 export function isEventHook(event: EventBase) : event is EventHook {

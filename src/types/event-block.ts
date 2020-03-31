@@ -1,9 +1,9 @@
-import {Context} from "./context";
+import {ContextBlock} from "./context-block";
 import {EventBase} from "./event-base";
 import {BlockType} from "./block-type";
 
 export interface EventBlock extends EventBase {
-    context: Context;
+    context: ContextBlock;
 }
 
 export function isEventBlock(event: EventBase) : event is EventBlock {

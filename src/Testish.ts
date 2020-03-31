@@ -1,28 +1,29 @@
 import {
-    BlockOptions,
+    UserOptionsBlock,
     BlockType,
-    Callback,
-    Context,
+    CallbackBlock,
+    ContextBlock,
     Event,
     EventBlock,
     EventHook,
     EventNote,
     EventStatusType,
     EventType,
-    HookCallback,
-    HookContext,
-    HookContextDetails,
+    CallbackHook,
+    ContextHook,
+    HookSettingsAndState,
     HookDepth,
     HookEachWhen,
     HookOnceWhen,
-    HookOptions, HookTargetBlockType,
+    UserOptionsHook,
+    BlockTypeHookTarget,
     HookWhen,
     isHookBefore,
     isHookOnce,
     isJsonValue,
     JsonValue,
     Reporter,
-    State
+    State, UserOptions
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -70,7 +71,7 @@ export class Testish {
         );
     }
 
-    private get context() : Context | HookContext {
+    private get context() : ContextBlock | ContextHook {
         return this.state && this.state.context;
     }
 
@@ -81,7 +82,7 @@ export class Testish {
         }
     }
 
-    private createState(parentState: State, blockType: BlockType, description: string, options: BlockOptions | HookOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
+    private createState(parentState: State, blockType: BlockType, description: string, options: UserOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
         const state : State = {
             blockType: blockType,
             promise: stateOptions.promise || Promise.resolve(),
@@ -130,8 +131,8 @@ export class Testish {
         return this.reporter.on(event);
     }
 
-    private findHooks(fromState: State, blockTypes: BlockType[], when: HookWhen) : HookContextDetails[] {
-        const hooks : HookContextDetails[] = [];
+    private findHooks(fromState: State, blockTypes: BlockType[], when: HookWhen) : HookSettingsAndState[] {
+        const hooks : HookSettingsAndState[] = [];
 
         // Only DESCRIBE and IT have hooks so far
         blockTypes = blockTypes.filter(blockType => (blockType === BlockType.DESCRIBE || blockType === BlockType.IT));
@@ -145,7 +146,7 @@ export class Testish {
             for (let hook of state.hooks.slice()) {
                 // blockType
                 if (hook.blockTypes && hook.blockTypes.length
-                && !blockTypes.some(blockType => hook.blockTypes.includes(blockType as HookTargetBlockType)))
+                && !blockTypes.some(blockType => hook.blockTypes.includes(blockType as BlockTypeHookTarget)))
                     continue;
 
                 // depth
@@ -158,7 +159,7 @@ export class Testish {
                     continue;
 
                 hooks.push({
-                    hook,
+                    settings: hook,
                     creationState: state
                 });
             }
@@ -167,71 +168,71 @@ export class Testish {
         return hooks;
     }
 
-    private async _stepRunHook(ownerState: State, triggerState: State, hook: HookContextDetails) {
-        if (isHookOnce(hook.hook.when))
-            hook.creationState.hooks.splice(hook.creationState.hooks.indexOf(hook.hook));
+    private async _stepRunHook(ownerState: State, triggerState: State, hook: HookSettingsAndState) {
+        if (isHookOnce(hook.settings.when))
+            hook.creationState.hooks.splice(hook.creationState.hooks.indexOf(hook.settings));
 
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
 
-        const context = ownState.context as HookContext;
+        const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState.context;
-        hook.hook.executed = true;
+        hook.settings.executed = true;
 
-        await this._stepCallback(hook.hook.callback, hook.hook.description, hook.hook.timeout, {
+        await this._stepCallback(hook.settings.callback, hook.settings.description, hook.settings.timeout, {
             ownState,
             ownerState,
             eventBase: {
                 blockType: BlockType.HOOK,
                 description: context.description,
-                hookOptions: hook.hook,
+                hookOptions: hook.settings,
                 context
             },
             propagateExceptions: true
         });
     }
 
-    private async _stepSkipHook(ownerState: State, triggerState: State, hook: HookContextDetails, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
+    private async _stepSkipHook(ownerState: State, triggerState: State, hook: HookSettingsAndState, exception?: Error) {
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
 
-        const context = ownState.context as HookContext;
+        const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState.context;
 
-        await this._stepSkip(hook.hook.callback, hook.hook.description, {
+        await this._stepSkip(hook.settings.callback, hook.settings.description, {
             ownState,
             ownerState,
             eventBase: {
                 blockType: BlockType.HOOK,
                 description: context.description,
-                hookOptions: hook.hook,
+                hookOptions: hook.settings,
                 context
             },
             exception
         });
     }
 
-    private async _stepUnusedHook(ownerState: State, triggerState: State | undefined, hook: HookContextDetails, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.hook.description, hook.hook);
+    private async _stepUnusedHook(ownerState: State, triggerState: State | undefined, hook: HookSettingsAndState, exception?: Error) {
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
 
-        const context = ownState.context as HookContext;
+        const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState && triggerState.context;
 
-        await this._stepUnused(hook.hook.callback, hook.hook.description, {
+        await this._stepUnused(hook.settings.callback, hook.settings.description, {
             ownState,
             ownerState,
             eventBase: {
                 blockType: BlockType.HOOK,
                 description: context.description,
-                hookOptions: hook.hook,
+                hookOptions: hook.settings,
                 context
             },
             exception
         });
     }
 
-    private async _stepRunHooks(ownerState: State, triggerState: State, hooks: HookContextDetails[]) {
+    private async _stepRunHooks(ownerState: State, triggerState: State, hooks: HookSettingsAndState[]) {
         await hooks
             .reduce((cur, hook) => {
                 return cur.then(
@@ -246,7 +247,7 @@ export class Testish {
             }, Promise.resolve());
     }
 
-    private async _stepSkipHooks(ownerState: State, triggerState: State, hooks: HookContextDetails[], exception?: Error) {
+    private async _stepSkipHooks(ownerState: State, triggerState: State, hooks: HookSettingsAndState[], exception?: Error) {
         await hooks
             .reduce(async (cur, hook) => {
                 await cur;
@@ -270,19 +271,19 @@ export class Testish {
     }
 
     private async _stepRunAfterOnceHooks(ownerState: State, exception?: Error) {
-        const hooks : HookContextDetails[] = ownerState.hooks
+        const hooks : HookSettingsAndState[] = ownerState.hooks
             .filter(hook =>
                 hook.when === HookOnceWhen.AFTER_ONCE &&
                 hook.blockTypes.some(blockType =>
                     ownerState.triggers.findIndex(trigger => trigger.state.blockType === blockType) !== -1
                 )
             )
-            .map(hook => ({ hook, creationState: ownerState }));
+            .map(hook => ({ settings: hook, creationState: ownerState }));
 
 
-        let filteredHooks : HookContextDetails[] = [];
+        let filteredHooks : HookSettingsAndState[] = [];
 
-        // If a hook targets multiple block types, we want to execute after the last target trigger
+        // If a settings targets multiple block types, we want to execute after the last target trigger
         const findLastIndex = <T>(arr: T[], predicate: (val: T, idx: number, arr: T[]) => boolean) => {
             for (let [idx, val] of [...arr.entries()].reverse()) {
                 if (predicate(val, idx, arr))
@@ -296,12 +297,12 @@ export class Testish {
                 return cur
                     .finally(() => {
                         filteredHooks = hooks.filter(hook =>
-                            !hook.hook.executed && (
+                            !hook.settings.executed && (
                                 iTrigger === findLastIndex(
                                     ownerState.triggers,
                                     trigger =>
-                                        (hook.hook.depth === HookDepth.ALL || hook.hook.depth == trigger.depth) &&
-                                        hook.hook.blockTypes.indexOf(trigger.state.blockType as HookTargetBlockType) !== -1
+                                        (hook.settings.depth === HookDepth.ALL || hook.settings.depth == trigger.depth) &&
+                                        hook.settings.blockTypes.indexOf(trigger.state.blockType as BlockTypeHookTarget) !== -1
                                 )
                             )
                         );
@@ -349,8 +350,8 @@ export class Testish {
     }
 
     private async _stepUnusedHooks(ownState: State, exception?: Error) {
-        const hooks : HookContextDetails[] = ownState.hooks.filter(hook => !hook.executed).map(hook => ({
-            hook,
+        const hooks : HookSettingsAndState[] = ownState.hooks.filter(hook => !hook.executed).map(hook => ({
+            settings: hook,
             creationState: ownState
         }));
 
@@ -364,7 +365,7 @@ export class Testish {
     }
     
     private async _stepUnused(
-        callback: Callback | HookCallback,
+        callback: CallbackBlock | CallbackHook,
         description: string,
         options: {
             ownState?: State;
@@ -385,7 +386,7 @@ export class Testish {
     }
 
     private async _stepSkip(
-        callback: Callback | HookCallback,
+        callback: CallbackBlock | CallbackHook,
         description: string,
         options: {
             ownState?: State;
@@ -406,7 +407,7 @@ export class Testish {
     }
 
     private async _stepCallback(
-        callback: Callback | HookCallback,
+        callback: CallbackBlock | CallbackHook,
         description: string,
         timeout: number,
         options: {
@@ -523,7 +524,7 @@ export class Testish {
         }
     }
 
-    private queueBlock(blockType: BlockType, callback: Callback, description: string, options: BlockOptions) {
+    private queueBlock(blockType: BlockType, callback: CallbackBlock, description: string, options: UserOptionsBlock) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
 
@@ -677,7 +678,7 @@ export class Testish {
         });
     }
 
-    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options: BlockOptions) {
+    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options: UserOptionsBlock) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
         return this.state.promise = this.state.promise
@@ -698,17 +699,17 @@ export class Testish {
             );
     }
 
-    public describe(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+    public describe(description: string, callback: CallbackBlock, options?: UserOptionsBlock) : void | Promise<void> {
         return this.queueBlock(BlockType.DESCRIBE, callback, description, options || {});
     }
-    public it(description: string, callback: Callback, options?: BlockOptions) : void | Promise<void> {
+    public it(description: string, callback: CallbackBlock, options?: UserOptionsBlock) : void | Promise<void> {
         return this.queueBlock(BlockType.IT, callback, description, options || {});
     }
-    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options?: BlockOptions) : void | Promise<void> {
+    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options?: UserOptionsBlock) : void | Promise<void> {
         // TODO: Make this a full blown block with enter/leave/fail conditions
         return this.queueNote(id, description, value, options);
     }
-    public hook(description: string, callback: HookCallback, options: HookOptions) : void {
+    public hook(description: string, callback: CallbackHook, options: UserOptionsHook) : void {
         this.state.hooks.push(Object.assign(
             {},
             options,

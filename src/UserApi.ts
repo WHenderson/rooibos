@@ -2,27 +2,27 @@ import {Guid} from "guid-typescript";
 import {Testish} from "./Testish";
 import {
     BlockType,
-    Callback,
-    HookCallback,
+    CallbackBlock,
+    CallbackHook,
     HookDepth,
     HookEachWhen,
     HookOnceWhen,
-    HookOptions, HookWhen,
+    UserOptionsHook, HookWhen,
     JsonValue
 } from "./types";
 
 export type DescribeFunc =
-    ((description: string, callback: Callback) => void | Promise<void>) &
-    ((callback: Callback) => void | Promise<void>);
+    ((description: string, callback: CallbackBlock) => void | Promise<void>) &
+    ((callback: CallbackBlock) => void | Promise<void>);
 export type ItFunc =
-    ((description: string, callback: Callback) => void | Promise<void>) &
-    ((callback: Callback) => void | Promise<void>);
+    ((description: string, callback: CallbackBlock) => void | Promise<void>) &
+    ((callback: CallbackBlock) => void | Promise<void>);
 export type NoteFunc =
     ((id: Guid, description: string, value: (() => JsonValue) | JsonValue) => void | Promise<void>) &
     ((id: Guid, value: (() => JsonValue) | JsonValue) => void | Promise<void>);
 export type HookFunc =
-    ((description: string, callback: HookCallback) => void | Promise<void>) &
-    ((callback: HookCallback) => void | Promise<void>);
+    ((description: string, callback: CallbackHook) => void | Promise<void>) &
+    ((callback: CallbackHook) => void | Promise<void>);
 
 export interface UserApiRoot {
     describe: DescribeFunc;
@@ -39,8 +39,8 @@ export interface UserApiRoot {
 }
 
 //interface UserApiRootInternal extends UserApiRoot {
-//    hook: (description : string | HookCallback, callback? : HookCallback) => void | Promise<void>;
-//    testish: (options: Partial<{ timeout: number; } | HookOptions>) => UserApiRootInternal;
+//    settings: (description : string | HookCallback, callback? : HookCallback) => void | Promise<void>;
+//    testish: (options: Partial<{ timeout: number; } | OptionsHook>) => UserApiRootInternal;
 //}
 
 export interface HookApiKnownDepth {
@@ -58,7 +58,7 @@ export interface HookApi {
 
 export type HookApiFunc = HookFunc & HookApi;
 
-export function testish(testish: Testish, defaults?: Partial<{ timeout: number; } & HookOptions>) : UserApiRoot {
+export function testish(testish: Testish, defaults?: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
     const instance = testish;
 
     function testishApi(defaults: Partial<{ timeout: number; }>) : UserApiRoot {
@@ -76,12 +76,12 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }
 
         // testish
-        function testish(options: Partial<{ timeout: number; } & HookOptions>) : UserApiRoot {
+        function testish(options: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
             return testishApi(Object.assign({}, defaults, options));
         }
 
         // describe
-        function describe(description : string | Callback, callback? : Callback) : void | Promise<void> {
+        function describe(description : string | CallbackBlock, callback? : CallbackBlock) : void | Promise<void> {
             if (typeof description !== 'string') {
                 callback = description;
                 description = description && description.name || undefined;
@@ -90,7 +90,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }
 
         // it
-        function it(description : string | Callback, callback? : Callback) : void | Promise<void> {
+        function it(description : string | CallbackBlock, callback? : CallbackBlock) : void | Promise<void> {
             if (typeof description !== 'string') {
                 callback = description;
                 description = description && description.name || undefined;
@@ -107,8 +107,8 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
             return instance.note(id, description as string, value);
         }
 
-        // hook
-        function hook(description : string | HookCallback, callback : HookCallback, options: Partial<HookOptions> & Pick<HookOptions, 'when'>) : void | Promise<void> {
+        // settings
+        function hook(description : string | CallbackHook, callback : CallbackHook, options: Partial<UserOptionsHook> & Pick<UserOptionsHook, 'when'>) : void | Promise<void> {
             if (typeof description !== 'string') {
                 callback = description;
                 description = description && description.name || undefined;
@@ -126,45 +126,45 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }
         
         // before
-        function before(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+        function before(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
             return hook(description, callback, { when: HookOnceWhen.BEFORE_ONCE });
         }
 
         // after
-        function after(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+        function after(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
             return hook(description, callback, { when: HookOnceWhen.AFTER_ONCE });
         }
 
         // beforeEach
-        function beforeEach(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+        function beforeEach(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
             return hook(description, callback, { when: HookEachWhen.BEFORE_EACH });
         }
 
         // afterEach
-        function afterEach(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+        function afterEach(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
             return hook(description, callback, { when: HookEachWhen.AFTER_EACH });
         }        
 
         function addHookApi(root: HookFunc, when: HookWhen) : HookApiFunc {
-            function describe(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+            function describe(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
                 return hook(description, callback, { when, blockTypes: [BlockType.DESCRIBE] });
             }
-            function it(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+            function it(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
                 return hook(description, callback, { when, blockTypes: [BlockType.IT] });
             }
 
-            function shallow(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+            function shallow(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
                 return hook(description, callback, { when, depth: HookDepth.SHALLOW });
             }
-            function deep(description : string | HookCallback, callback? : HookCallback) : void | Promise<void> {
+            function deep(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
                 return hook(description, callback, { when, depth: HookDepth.DEEP });
             }
 
             function addHookApiKnownDepth(root: HookFunc, depth: HookDepth) : HookApiKnownDepth & HookFunc {
-                function describe(description : string | Callback, callback? : HookCallback) : void | Promise<void> {
+                function describe(description : string | CallbackBlock, callback? : CallbackHook) : void | Promise<void> {
                     return hook(description, callback, { when, depth, blockTypes: [BlockType.DESCRIBE] });
                 }
-                function it(description : string | Callback, callback? : HookCallback) : void | Promise<void> {
+                function it(description : string | CallbackBlock, callback? : CallbackHook) : void | Promise<void> {
                     return hook(description, callback, { when, depth, blockTypes: [BlockType.IT] });
                 }
 

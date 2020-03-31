@@ -1,10 +1,4 @@
-import {AbortApi} from 'advanced-promises';
-import {BlockType} from "./block-type";
+import {ContextBlock} from "./context-block";
+import {ContextHook} from "./context-hook";
 
-export interface Context {
-    blockType: BlockType;
-    description: string;
-    parent: Context;
-    data: object;
-    aapi: AbortApi;
-}
+export type Context = ContextBlock | ContextHook;
