@@ -1,3 +1,5 @@
+import {Guid} from "guid-typescript";
+import {Testish} from "./Testish";
 import {
     BlockType,
     Callback,
@@ -5,12 +7,9 @@ import {
     HookDepth,
     HookEachWhen,
     HookOnceWhen,
-    HookOptions,
-    HookWhen,
+    HookOptions, HookWhen,
     JsonValue
 } from "./types";
-import {Guid} from "guid-typescript";
-import {Testish} from "./Testish";
 
 export type DescribeFunc =
     ((description: string, callback: Callback) => void | Promise<void>) &

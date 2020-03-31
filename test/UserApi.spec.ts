@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {createApi, mutatingMerge} from "./_util";
-import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 import {testish} from "../src";
 import {Guid} from "guid-typescript";
+import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 
 chai.use(chaiAsPromised);
 const should = chai.should;
