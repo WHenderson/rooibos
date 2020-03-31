@@ -2,7 +2,7 @@ import {
     BlockType,
     BlockTypeHookTarget,
     CallbackBlock,
-    CallbackHook,
+    CallbackHook, Context,
     ContextBlock,
     ContextHook,
     ErrorAbort,
@@ -43,8 +43,9 @@ export class Testish {
         this.rootState = this.state = this.createState(
             undefined,
             BlockType.SCRIPT,
-            options.description,
-            {},
+            {
+                description: options.description
+            },
             {
                 promise: (options.promise || Promise.resolve())
                     .then(
@@ -72,22 +73,31 @@ export class Testish {
         }
     }
 
-    private createState(parentState: State, blockType: BlockType, description: string, options: UserOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
+    private createContext(state: State, userOptions: UserOptions) : Context {
+        const context : Omit<Context, 'aapi'> = Object.assign(
+            {},
+            userOptions,
+            {
+                blockType: state.blockType,
+                parent: state.parentState && state.parentState.context,
+                data: {}
+            }
+        );
+        Object.defineProperty(context, 'aapi', { get: () => state });
+        return context as Context;
+    }
+
+    private createState(parentState: State, blockType: BlockType, userOptions: UserOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
         const state : State = {
             blockType: blockType,
             promise: stateOptions.promise || Promise.resolve(),
             hooks: [],
             aapi: stateOptions.aapi || new AbortApiPublic(),
-            context: {
-                blockType,
-                description,
-                parent: parentState && parentState.context,
-                data: {},
-                get aapi() { return state.aapi; }
-            },
+            context: undefined,
             parentState: parentState,
             triggers: []
         };
+        state.context = this.createContext(state, userOptions);
 
         if (parentState) {
             // parent
@@ -184,64 +194,74 @@ export class Testish {
         if (isHookOnce(hook.settings.when))
             hook.creationState.hooks.splice(hook.creationState.hooks.indexOf(hook.settings));
 
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings);
 
         const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState.context;
         hook.settings.executed = true;
 
-        await this._stepCallback(hook.settings.callback, hook.settings.description, hook.settings.timeout, {
-            ownState,
-            ownerState,
-            eventBase: {
-                blockType: BlockType.HOOK,
-                description: context.description,
-                hookOptions: hook.settings,
-                context
-            },
-            propagateExceptions: true
-        });
+        await this._stepCallback(
+            hook.settings.callback,
+            hook.settings.timeout,
+            {
+                ownState,
+                ownerState,
+                eventBase: {
+                    blockType: BlockType.HOOK,
+                    description: context.description,
+                    hookOptions: hook.settings,
+                    context
+                },
+                propagateExceptions: true
+            }
+        );
     }
 
     private async _stepSkipHook(ownerState: State, triggerState: State, hook: HookSettingsAndState, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings);
 
         const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState.context;
 
-        await this._stepSkip(hook.settings.callback, hook.settings.description, {
-            ownState,
-            ownerState,
-            eventBase: {
-                blockType: BlockType.HOOK,
-                description: context.description,
-                hookOptions: hook.settings,
-                context
-            },
-            exception
-        });
+        await this._stepSkip(
+            hook.settings.callback,
+            {
+                ownState,
+                ownerState,
+                eventBase: {
+                    blockType: BlockType.HOOK,
+                    description: context.description,
+                    hookOptions: hook.settings,
+                    context
+                },
+                exception
+            }
+        );
     }
 
     private async _stepUnusedHook(ownerState: State, triggerState: State | undefined, hook: HookSettingsAndState, exception?: Error) {
-        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings.description, hook.settings);
+        const ownState = this.createState(ownerState, BlockType.HOOK, hook.settings);
 
         const context = ownState.context as ContextHook;
         context.creator = hook.creationState.context;
         context.trigger = triggerState && triggerState.context;
 
-        await this._stepUnused(hook.settings.callback, hook.settings.description, {
-            ownState,
-            ownerState,
-            eventBase: {
-                blockType: BlockType.HOOK,
-                description: context.description,
-                hookOptions: hook.settings,
-                context
-            },
-            exception
-        });
+        await this._stepUnused(
+            hook.settings.callback,
+            {
+                ownState,
+                ownerState,
+                eventBase: {
+                    blockType: BlockType.HOOK,
+                    description: context.description,
+                    hookOptions: hook.settings,
+                    context
+                },
+                exception
+            }
+        );
     }
 
     private async _stepRunHooks(ownerState: State, triggerState: State, hooks: HookSettingsAndState[]) {
@@ -378,7 +398,6 @@ export class Testish {
     
     private async _stepUnused(
         callback: CallbackBlock | CallbackHook,
-        description: string,
         options: {
             ownState?: State;
             ownerState: State;
@@ -399,7 +418,6 @@ export class Testish {
 
     private async _stepSkip(
         callback: CallbackBlock | CallbackHook,
-        description: string,
         options: {
             ownState?: State;
             ownerState: State;
@@ -420,7 +438,6 @@ export class Testish {
 
     private async _stepCallback(
         callback: CallbackBlock | CallbackHook,
-        description: string,
         timeout: number,
         options: {
             ownState?: State;
@@ -538,7 +555,7 @@ export class Testish {
         }
     }
 
-    private queueBlock(blockType: BlockType, callback: CallbackBlock, description: string, options: UserOptionsBlock) {
+    private queueBlock(blockType: BlockType, callback: CallbackBlock, options: UserOptionsBlock) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
 
@@ -547,7 +564,7 @@ export class Testish {
             .finally(
                 () => {
                     ownerState = this.state;
-                    ownState = this.createState(ownerState, blockType, description, options);
+                    ownState = this.createState(ownerState, blockType, options);
                 }
             )
             // beforeOnce
@@ -581,7 +598,6 @@ export class Testish {
                 async () => {
                     await this._stepCallback(
                         callback,
-                        description,
                         options.timeout,
                         {
                             ownerState,
@@ -598,7 +614,6 @@ export class Testish {
                 async (exception) => {
                     await this._stepSkip(
                         callback,
-                        description,
                         {
                             ownerState,
                             ownState,
@@ -641,12 +656,12 @@ export class Testish {
             ;
     }
 
-    private async _stepRunNote(ownState: State, id: Guid, description: string, value: (() => JsonValue) | JsonValue) {
+    private async _stepRunNote(ownState: State, id: Guid, value: (() => JsonValue) | JsonValue, options: UserOptionsBlock) {
         await this.report({
             blockType: BlockType.NOTE,
             eventType: EventType.ENTER,
             eventStatusType: EventStatusType.SUCCESS,
-            description: description,
+            description: options.description,
             id,
             context: ownState.context
         });
@@ -657,7 +672,7 @@ export class Testish {
                 blockType: BlockType.NOTE,
                 eventType: EventType.NOTE,
                 eventStatusType: EventStatusType.SUCCESS,
-                description: description,
+                description: options.description,
                 id,
                 value: isJsonValue(value) ? value : value === undefined ? undefined : value(),
                 context: ownState.context
@@ -672,19 +687,19 @@ export class Testish {
                 blockType: BlockType.NOTE,
                 eventType: EventType.LEAVE,
                 eventStatusType: exception ? EventStatusType.EXCEPTION : EventStatusType.SUCCESS,
-                description: description,
+                description: options.description,
                 id,
                 context: ownState.context,
                 exception
             });
         }
     }
-    private async _stepSkipNote(ownState: State, id: Guid, description: string, value: (() => JsonValue) | JsonValue, exception: Error) {
+    private async _stepSkipNote(ownState: State, id: Guid, value: (() => JsonValue) | JsonValue, options: UserOptionsBlock, exception: Error) {
         await this.report({
             blockType: BlockType.NOTE,
             eventType: EventType.SKIP,
             eventStatusType: EventStatusType.SUCCESS,
-            description: description,
+            description: options.description,
             exception,
             id,
             value: isJsonValue(value) ? value : undefined,
@@ -692,38 +707,38 @@ export class Testish {
         });
     }
 
-    private queueNote(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options: UserOptionsBlock) {
+    private queueNote(id: Guid, value: (() => JsonValue) | JsonValue, options: UserOptionsBlock) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
         return this.state.promise = this.state.promise
             .finally(
                 () => {
                     ownerState = this.state;
-                    ownState = this.createState(ownerState, BlockType.NOTE, description, options);
+                    ownState = this.createState(ownerState, BlockType.NOTE, options);
                 }
             )
             .then(
                 async () => {
-                    await this._stepRunNote(ownState, id, description, value);
+                    await this._stepRunNote(ownState, id, value, options);
                 },
                 async (exception) => {
-                    await this._stepSkipNote(ownState, id, description, value, exception);
+                    await this._stepSkipNote(ownState, id, value, options, exception);
                     throw exception;
                 }
             );
     }
 
-    public describe(description: string, callback: CallbackBlock, options?: UserOptionsBlock) : void | Promise<void> {
-        return this.queueBlock(BlockType.DESCRIBE, callback, description, options || {});
+    public describe(description: string, callback: CallbackBlock, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
+        return this.queueBlock(BlockType.DESCRIBE, callback, Object.assign({}, options, { description }));
     }
-    public it(description: string, callback: CallbackBlock, options?: UserOptionsBlock) : void | Promise<void> {
-        return this.queueBlock(BlockType.IT, callback, description, options || {});
+    public it(description: string, callback: CallbackBlock, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
+        return this.queueBlock(BlockType.IT, callback, Object.assign({}, options, { description }));
     }
-    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options?: UserOptionsBlock) : void | Promise<void> {
+    public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
         // TODO: Make this a full blown block with enter/leave/fail conditions
-        return this.queueNote(id, description, value, options);
+        return this.queueNote(id, value, Object.assign({}, options, { description }));
     }
-    public hook(description: string, callback: CallbackHook, options: UserOptionsHook) : void {
+    public hook(description: string, callback: CallbackHook, options: Omit<UserOptionsHook, 'description'>) : void {
         this.state.hooks.push(Object.assign(
             {},
             options,

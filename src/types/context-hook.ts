@@ -1,6 +1,10 @@
 import {ContextBlock} from "./context-block";
+import {UserOptionsHook} from "./user-options-hook";
 
-export interface ContextHook extends ContextBlock {
+// Typescript limitation
+type _ContextHookBase = ContextBlock & UserOptionsHook;
+
+export interface ContextHook extends _ContextHookBase {
     creator: ContextBlock;
     trigger: ContextBlock;
 }
