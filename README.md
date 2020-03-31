@@ -8,7 +8,9 @@ TODO:
 - [x] Standardise type name order - i.e. WhatItIs_WhatItsFor (validate it will do a better job)
 - [ ] Rename variables to match new type names
 - [x] Create timeout and abort extensions to Error
-- [ ] Use new Error types
+- [x] Use new Error types
+- [ ] Add context to errors
+- [ ] Add tests for abort api
 - [ ] Determine good name for groups [it, describe, note, script], [hook]?
 - [ ] Add tag API
 - [ ] Add timeouts for notes

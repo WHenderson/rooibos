@@ -23,7 +23,7 @@ import {
     isJsonValue,
     JsonValue,
     Reporter,
-    State, UserOptions
+    State, UserOptions, ErrorAbort, ErrorTimeout
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -420,8 +420,8 @@ export class Testish {
             propagateExceptions: boolean
             }
         ) {
-        const RES_ABORT = new Error('Abort');
-        const RES_TIMEOUT = new Error('Timeout');
+        const RES_ABORT = new ErrorAbort();
+        const RES_TIMEOUT = new ErrorTimeout();
         let exception: Error = undefined;
         let res : void | Error = undefined;
         let eventStatusType: EventStatusType = EventStatusType.SUCCESS;
@@ -505,7 +505,9 @@ export class Testish {
             await wait.promise;
 
             if (res === RES_TIMEOUT)
+            { // noinspection ExceptionCaughtLocallyJS
                 throw res;
+            }
         }
         catch (ex) {
             if (!exception) {
