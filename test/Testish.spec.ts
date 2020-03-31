@@ -5,66 +5,12 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 import {Guid} from "guid-typescript";
+import {createApi, getEx, mutatingMerge} from "./_util";
 
 chai.use(chaiAsPromised);
 const should = chai.should;
 const expect = chai.expect;
 
-function createApi(options = {}) {
-    const jsonReporter = new JsonReporter();
-    const api = new Testish(Object.assign(
-        {
-            reporter: new PipeReporter([
-                jsonReporter,
-                new VerboseReporter({ indent: true })
-            ])
-        },
-        options
-    ));
-
-    return { events: jsonReporter.events, api };
-}
-
-function mutatingMerge(expected, actual) {
-    if (!expected || typeof expected !== 'object' || expected instanceof Error)
-        return;
-    if (!actual || typeof actual !== 'object' || actual instanceof Error)
-        return;
-
-    if (Array.isArray(expected)) {
-        expected.forEach((val, idx) => {
-           mutatingMerge(val, actual[idx]);
-        });
-        return expected;
-    }
-
-    Object.entries(actual).forEach(([key, val]) => {
-        if ({}.hasOwnProperty.call(expected, key)) {
-            if (val && val instanceof Error && typeof expected[key] === 'string')
-                actual[key] = val.message;
-            else
-                mutatingMerge(expected[key], val);
-        }
-        else {
-            delete actual[key];
-            //expected[key] = val;
-        }
-    });
-
-    return expected;
-}
-
-
-function getEx(cb: () => void) : Error {
-    let exception : Error = undefined;
-    try {
-        cb();
-    }
-    catch (ex) {
-        exception = ex;
-    }
-    return exception;
-}
 
 describe('Testish', () => {
     describe('describe', () => {

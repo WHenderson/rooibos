@@ -1,0 +1,74 @@
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import {createApi, mutatingMerge} from "./_util";
+import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
+import {testish} from "../src";
+
+chai.use(chaiAsPromised);
+const should = chai.should;
+const expect = chai.expect;
+
+describe('user api', () => {
+    it('basic hooks api', async () => {
+        const { api: iapi, events } = createApi();
+        const api = testish(iapi);
+
+        api.before('before', () => {});
+        api.before(function testBefore() {});
+        api.beforeEach('beforeEach', () => {});
+        api.beforeEach(function testBeforeEach() {});
+        api.afterEach('afterEach', () => {});
+        api.afterEach(function testAfterEach() {});
+        api.after('after', () => {});
+        api.after(function testAfter() {});
+
+
+        await iapi.done();
+
+        expect(events).to.deep.equal(mutatingMerge([
+            { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+            { description: 'before', hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'testBefore', hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'beforeEach', hookOptions: { when: HookWhen.BEFORE_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'testBeforeEach', hookOptions: { when: HookWhen.BEFORE_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'afterEach', hookOptions: { when: HookWhen.AFTER_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'testAfterEach', hookOptions: { when: HookWhen.AFTER_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'after', hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: 'testAfter', hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+
+            { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+        ], events));
+
+    });
+    it('fluent hook api', async () => {
+        const { api: iapi, events } = createApi();
+        const api = testish(iapi);
+
+        api.before(() => {});
+        api.before.it(() => {});
+        api.before.describe(() => {});
+        api.before.deep(() => {});
+        api.before.shallow(() => {});
+        api.before.deep.it(() => {});
+        api.before.deep.describe(() => {});
+        api.before.shallow.it(() => {});
+        api.before.shallow.describe(() => {});
+
+        await iapi.done();
+
+        expect(events).to.deep.equal(mutatingMerge([
+            { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.DESCRIBE] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.DEEP, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.DEEP, blockTypes: [BlockType.IT] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.DEEP, blockTypes: [BlockType.DESCRIBE] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.IT] }  },
+            { description: undefined, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.DESCRIBE] }  },
+            { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+        ], events));
+
+    });
+});

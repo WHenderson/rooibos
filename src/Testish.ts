@@ -14,7 +14,7 @@ import {
     HookDepth,
     HookEachWhen,
     HookOnceWhen,
-    HookOptions,
+    HookOptions, HookTargetBlockType,
     HookWhen,
     isHookBefore,
     isHookOnce,
@@ -143,7 +143,7 @@ export class Testish {
             for (let hook of state.hooks.slice()) {
                 // blockType
                 if (hook.blockTypes && hook.blockTypes.length
-                && !blockTypes.some(blockType => hook.blockTypes.includes(blockType)))
+                && !blockTypes.some(blockType => hook.blockTypes.includes(blockType as HookTargetBlockType)))
                     continue;
 
                 // depth
@@ -308,7 +308,7 @@ export class Testish {
                                     ownerState.triggers,
                                     trigger =>
                                         (hook.hook.depth === HookDepth.ALL || hook.hook.depth == trigger.depth) &&
-                                        hook.hook.blockTypes.indexOf(trigger.state.blockType) !== -1
+                                        hook.hook.blockTypes.indexOf(trigger.state.blockType as HookTargetBlockType) !== -1
                                 )
                             )
                         );
@@ -711,8 +711,6 @@ export class Testish {
     public it(description: string, callback: Callback, options?: { timeout?: number }) : void | Promise<void> {
         return this.queueBlock(BlockType.IT, callback, description, options && options.timeout);
     }
-    public note(id: Guid, description: string, value: JsonValue) : void | Promise<void>;
-    public note(id: Guid, description: string, value: () => JsonValue) : void | Promise<void>;
     public note(id: Guid, description: string, value: (() => JsonValue) | JsonValue) : void | Promise<void> {
         // TODO: Make this a full blown block with enter/leave/fail conditions
         return this.queueNote(id, description, value);

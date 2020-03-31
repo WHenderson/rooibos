@@ -43,8 +43,10 @@ export enum HookDepth {
 
 export type HookCallback = (context: HookContext) => void | PromiseLike<void>;
 
+export type HookTargetBlockType = BlockType.DESCRIBE | BlockType.IT;
+
 export interface HookOptions {
-    blockTypes: BlockType[];
+    blockTypes: HookTargetBlockType[];
     when: HookWhen;
     depth: HookDepth;
     timeout: number;
