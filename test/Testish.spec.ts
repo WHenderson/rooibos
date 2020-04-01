@@ -263,9 +263,10 @@ describe('Testish', () => {
         it('describe should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
 
-            api.describe('a', async () => {
+            api.describe('a', async (context) => {
+                EX.context = context;
                 await new Timeout(50);
             }, { timeout: 10 });
 
@@ -283,9 +284,10 @@ describe('Testish', () => {
         it('it should time out and not propagate', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
 
-            api.it('a', async () => {
+            api.it('a', async (context) => {
+                EX.context = context;
                 await new Timeout(50);
             }, { timeout: 10 });
 
@@ -302,9 +304,10 @@ describe('Testish', () => {
         it('note should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
 
-            api.note(Guid.createEmpty(),'a', async () => {
+            api.note(Guid.createEmpty(),'a', async (context) => {
+                EX.context = context;
                 await new Timeout(50);
                 return {};
             }, { timeout: 10 });

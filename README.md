@@ -18,7 +18,11 @@ TODO:
 - [x] Add timeouts for notes
 - [x] Remove description from Event
 - [x] Test note timeouts
-- [ ] Validate error context
+- [x] Test it timeouts
+- [ ] Test hook timeouts
+- [x] Validate ErrorTimeout context
+- [ ] Validate ErrorAbort context
+- [ ] Validate ErrorNotJson context
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Rename variables to match new type names
 - [ ] Reorder methods
