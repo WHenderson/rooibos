@@ -29,6 +29,12 @@ export function mutatingMerge(expected, actual) {
         return expected;
     }
 
+    Object.entries(expected).forEach(([key, val]) => {
+        // make "key: undefined === key not in actual"
+        if (typeof val === 'undefined' && actual && !(key in actual))
+            delete expected[key];
+    });
+
     Object.entries(actual).forEach(([key, val]) => {
         if ({}.hasOwnProperty.call(expected, key)) {
             if (val && val instanceof Error && typeof expected[key] === 'string')

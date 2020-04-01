@@ -310,7 +310,7 @@ describe('Testish', () => {
         });
     });
 
-    describe('note', () => {
+    describe.only('note', () => {
        it('should run in order', async () => {
            const { api, events } = createApi();
 
@@ -364,8 +364,6 @@ describe('Testish', () => {
            value = 'my final value';
            await api.done();
 
-           // TODO: Put notes into the queue to ensure they are executed in sibling order
-
            expect(events).to.deep.equal(mutatingMerge([
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { description: 'global note', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
@@ -391,10 +389,11 @@ describe('Testish', () => {
 
            expect(events).to.deep.equal(mutatingMerge([
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
-               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, exception: EX },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: EX },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: EX },
                { description: 'b', blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined, exception: EX },
-               { description: 'c', blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'direct', exception: EX },
+               { description: 'c', blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined, exception: EX },
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX},
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION},
            ], events));
