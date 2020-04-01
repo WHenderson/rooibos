@@ -16,8 +16,8 @@ TODO:
 - [x] Throw exception for invalid data? (i.e., not JSON)
 - [x] Add context to custom errors
 - [x] Add timeouts for notes
-- [ ] Remove description from Event
-- [ ] Test note timeouts
+- [x] Remove description from Event
+- [x] Test note timeouts
 - [ ] Validate error context
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Rename variables to match new type names

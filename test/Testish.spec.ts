@@ -260,7 +260,7 @@ describe('Testish', () => {
     });
 
     describe('timeout', () => {
-        it('should time out', async () => {
+        it('describe should time out', async () => {
             const { api, events } = createApi();
 
             const EX = { name: 'ErrorTimeout', message: 'Timeout' };
@@ -280,7 +280,47 @@ describe('Testish', () => {
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
-        it('timeout should propegate like an exception', async () => {
+        it('it should time out and not propagate', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
+
+            api.it('a', async () => {
+                await new Timeout(50);
+            }, { timeout: 10 });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+            ], events));
+        });
+        it('note should time out', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
+
+            api.note(Guid.createEmpty(),'a', async () => {
+                await new Timeout(50);
+                return {};
+            }, { timeout: 10 });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+        });
+        it('timeout should propagate like an exception', async () => {
             const { api, events } = createApi();
 
             const EX = new Error('Timeout');

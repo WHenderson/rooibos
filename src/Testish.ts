@@ -528,7 +528,10 @@ export class Testish {
             if (options.ownState && options.ownState.promiseAfter) {
                 inner = inner.then(
                     () => {
-                        options.ownState.promiseAfter.start.resolve();
+                        if (exception)
+                            options.ownState.promiseAfter.start.reject(exception);
+                        else
+                            options.ownState.promiseAfter.start.resolve();
                         return options.ownState.promiseAfter.end;
                     },
                     (exception) => {
