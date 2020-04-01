@@ -7,7 +7,7 @@ import {
     CallbackNote,
     Context, ContextBlock,
     ContextHook, ContextNote,
-    ErrorAbort,
+    ErrorAbort, ErrorNotJson,
     ErrorTimeout,
     Event,
     EventBlock,
@@ -680,6 +680,9 @@ export class Testish {
 
         const start = new Deconstructed<void>();
         const end = start.then(async () => {
+            if (typeof res !== 'undefined' && !isJsonValue(res))
+                throw new ErrorNotJson(res);
+
             await this.report(Object.assign(
                 {},
                 eventBase,
@@ -754,7 +757,6 @@ export class Testish {
         return this.queueBlock(BlockType.IT, callback, Object.assign({}, options, { description }));
     }
     public note(id: Guid, description: string, value: CallbackNote | JsonValue, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
-        // TODO: Make this a full blown block with enter/leave/fail conditions
         return this.queueNote(id, value, Object.assign({}, options, { description }));
     }
     public hook(description: string, callback: CallbackHook, options: Omit<UserOptionsHook, 'description'>) : void {

@@ -3,7 +3,7 @@ import {JsonReporter, PipeReporter, VerboseReporter} from "../src/Reporters";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
+import {BlockType, ErrorNotJson, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 import {Guid} from "guid-typescript";
 import {createApi, getEx, mutatingMerge} from "./_util";
 
@@ -310,7 +310,7 @@ describe('Testish', () => {
         });
     });
 
-    describe.only('note', () => {
+    describe('note', () => {
        it('should run in order', async () => {
            const { api, events } = createApi();
 
@@ -385,8 +385,6 @@ describe('Testish', () => {
 
            await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
-           // TODO: Put notes into the queue to ensure they are executed in sibling order
-
            expect(events).to.deep.equal(mutatingMerge([
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { description: 'a', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined },
@@ -398,6 +396,27 @@ describe('Testish', () => {
                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION},
            ], events));
        });
+       it('should fail for non-json', async () => {
+           const { api, events } = createApi();
+
+           const id = Guid.createEmpty();
+
+           const EX = new Error('my error');
+           const NotJson = { value: undefined };
+
+           api.note(id, 'a', NotJson);
+
+           await expect(api.done()).to.eventually.be.rejectedWith(ErrorNotJson, 'Not Json');
+
+           expect(events).to.deep.equal(mutatingMerge([
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: { message: 'Not Json', value: NotJson } },
+               { description: 'a', blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: 'Not Json' },
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
+               { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
+           ], events));
+       })
     });
 
     describe('hook', () => {

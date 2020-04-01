@@ -39,6 +39,19 @@ export function mutatingMerge(expected, actual) {
         if ({}.hasOwnProperty.call(expected, key)) {
             if (val && val instanceof Error && typeof expected[key] === 'string')
                 actual[key] = val.message;
+            else if (val && val instanceof Error && typeof expected[key] === 'object' && !(expected[key] instanceof Error)) {
+                val = actual[key] = ['name', 'message']
+                    .concat(Object.keys(val))
+                    .filter((val, idx, arr) => arr.indexOf(val) == idx)
+                    .reduce(
+                        (obj, key) => {
+                            obj[key] = val[key];
+                            return obj;
+                        },
+                        {}
+                    );
+                mutatingMerge(expected[key], val);
+            }
             else
                 mutatingMerge(expected[key], val);
         }

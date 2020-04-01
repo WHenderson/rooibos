@@ -9,17 +9,19 @@ TODO:
 - [x] Move description outside of State?
 - [x] Create timeout and abort extensions to Error
 - [x] Use new Error types
-- [ ] Rename variables to match new type names
 - [x] Extend context to include user options
-- [ ] Create steps for SCRIPT block
-- [ ] Test note timeouts
-- [ ] Trial notes with data that has a .then value
-- [ ] Throw exception for invalid data? (i.e., not JSON)
-- [ ] Remove description from Event
-- [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [x] Replace note implementation with standard stepCallback
 - [x] Move note reporting to avoid incorrect timeouts
+- [ ] Rename variables to match new type names
+- [ ] Test note timeouts
+- [x] Trial notes with data that has a .then value
+- [x] Throw exception for invalid data? (i.e., not JSON)
+- [ ] Add context to custom errors
+- [ ] Custom error type for invalid data type?
+- [ ] Remove description from Event
+- [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Add context to errors
+- [ ] Reorder methods
 - [ ] Add tests for abort api
 - [ ] Determine good name for groups [it, describe, note, script], [hook]?
 - [ ] Add tag API
