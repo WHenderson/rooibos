@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import {ErrorAbort, ErrorTimeout} from "../src/types";
+import {Context, ErrorAbort, ErrorNotJson, ErrorTimeout} from "../src/types";
 const should = chai.should;
 const expect = chai.expect;
 
@@ -8,26 +8,44 @@ describe('error types', () => {
     describe('ErrorTimeout', () => {
         it('should match Error interface', () => {
             const error = new Error('my-message');
-            const timeout = new ErrorTimeout();
+            const context = {} as Context;
+            const timeout = new ErrorTimeout(context);
 
             const props = ['name', 'stack', 'message'];
 
             expect(timeout.name).to.equal(ErrorTimeout.name);
-            expect(Object.keys(error)).to.deep.equal(Object.keys(timeout));
             expect(timeout.message).to.equal('Timeout');
+            expect(timeout.context).to.equal(context);
             expect(props.map(key => typeof timeout[key])).to.deep.equal(props.map(key => typeof error[key]));
         });
     });
     describe('ErrorAbort', () => {
         it('should match Error interface', () => {
             const error = new Error('my-message');
-            const abort = new ErrorAbort();
+            const context = {} as Context;
+            const abort = new ErrorAbort(context);
 
             const props = ['name', 'stack', 'message'];
 
             expect(abort.name).to.equal(ErrorAbort.name);
-            expect(Object.keys(error)).to.deep.equal(Object.keys(abort));
             expect(abort.message).to.equal('Abort');
+            expect(abort.context).to.equal(context);
+            expect(props.map(key => typeof abort[key])).to.deep.equal(props.map(key => typeof error[key]));
+        });
+    });
+    describe('ErrorNotJson', () => {
+        it('should match Error interface', () => {
+            const error = new Error('my-message');
+            const context = {} as Context;
+            const value = { x: undefined };
+            const abort = new ErrorNotJson(context, value);
+
+            const props = ['name', 'stack', 'message'];
+
+            expect(abort.name).to.equal(ErrorNotJson.name);
+            expect(abort.message).to.equal('Not Json');
+            expect(abort.context).to.equal(context);
+            expect(abort.value).to.equal(value);
             expect(props.map(key => typeof abort[key])).to.deep.equal(props.map(key => typeof error[key]));
         });
     });

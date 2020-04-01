@@ -1,6 +1,9 @@
-export class ErrorTimeout extends Error {
-    constructor(message = 'Timeout') {
-        super(message);
+import {ErrorBase} from "./error-base";
+import {Context} from "./context";
+
+export class ErrorTimeout extends ErrorBase {
+    constructor(context: Context, message: string = 'Timeout') {
+        super(context, message);
     }
 }
 Object.defineProperty(ErrorTimeout.prototype, 'name', {

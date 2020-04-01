@@ -1,7 +1,10 @@
-export class ErrorNotJson extends Error {
+import {ErrorBase} from "./error-base";
+import {Context} from "./context";
+
+export class ErrorNotJson extends ErrorBase {
     public value: any;
-    constructor(value, message = 'Not Json') {
-        super(message);
+    constructor(context: Context, value: any, message: string = 'Not Json') {
+        super(context, message);
         this.value = value;
     }
 }

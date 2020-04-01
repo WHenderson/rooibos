@@ -16,11 +16,11 @@ TODO:
 - [ ] Test note timeouts
 - [x] Trial notes with data that has a .then value
 - [x] Throw exception for invalid data? (i.e., not JSON)
-- [ ] Add context to custom errors
+- [x] Add context to custom errors
+- [ ] Validate error context
 - [ ] Custom error type for invalid data type?
 - [ ] Remove description from Event
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
-- [ ] Add context to errors
 - [ ] Reorder methods
 - [ ] Add tests for abort api
 - [ ] Determine good name for groups [it, describe, note, script], [hook]?

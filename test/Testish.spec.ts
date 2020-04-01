@@ -3,7 +3,7 @@ import {JsonReporter, PipeReporter, VerboseReporter} from "../src/Reporters";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import {BlockType, ErrorNotJson, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
+import {BlockType, ErrorNotJson, ErrorTimeout, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 import {Guid} from "guid-typescript";
 import {createApi, getEx, mutatingMerge} from "./_util";
 
@@ -263,21 +263,21 @@ describe('Testish', () => {
         it('should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = new Error('Timeout');
+            const EX = { name: 'ErrorTimeout', message: 'Timeout' };
 
             api.describe('a', async () => {
                 await new Timeout(50);
             }, { timeout: 10 });
 
-            await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
+            await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
 
             expect(events).to.deep.equal(mutatingMerge([
                 { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX.message },
-                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX.message },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
-                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { description: 'a', blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { description: undefined, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('timeout should propegate like an exception', async () => {

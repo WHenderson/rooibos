@@ -1,6 +1,9 @@
-export class ErrorAbort extends Error {
-    constructor(message = 'Abort') {
-        super(message);
+import {ErrorBase} from "./error-base";
+import {Context} from "./context";
+
+export class ErrorAbort extends ErrorBase {
+    constructor(context: Context, message: string = 'Abort') {
+        super(context, message);
     }
 }
 Object.defineProperty(ErrorAbort.prototype, 'name', {

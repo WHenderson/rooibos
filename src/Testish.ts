@@ -447,8 +447,8 @@ export class Testish {
             propagateExceptions: boolean
             }
         ) {
-        const RES_ABORT = new ErrorAbort();
-        const RES_TIMEOUT = new ErrorTimeout();
+        const RES_ABORT = new ErrorAbort(options.ownState && options.ownState.context);
+        const RES_TIMEOUT = new ErrorTimeout(options.ownState && options.ownState.context);
         let exception: Error = undefined;
         let res : void | Error = undefined;
         let eventStatusType: EventStatusType = EventStatusType.SUCCESS;
@@ -681,7 +681,7 @@ export class Testish {
         const start = new Deconstructed<void>();
         const end = start.then(async () => {
             if (typeof res !== 'undefined' && !isJsonValue(res))
-                throw new ErrorNotJson(res);
+                throw new ErrorNotJson(ownState.context, res);
 
             await this.report(Object.assign(
                 {},
