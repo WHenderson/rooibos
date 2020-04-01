@@ -12,21 +12,19 @@ TODO:
 - [x] Extend context to include user options
 - [x] Replace note implementation with standard stepCallback
 - [x] Move note reporting to avoid incorrect timeouts
-- [ ] Rename variables to match new type names
-- [ ] Test note timeouts
 - [x] Trial notes with data that has a .then value
 - [x] Throw exception for invalid data? (i.e., not JSON)
 - [x] Add context to custom errors
-- [ ] Validate error context
-- [ ] Custom error type for invalid data type?
+- [x] Add timeouts for notes
 - [ ] Remove description from Event
+- [ ] Test note timeouts
+- [ ] Validate error context
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
+- [ ] Rename variables to match new type names
 - [ ] Reorder methods
 - [ ] Add tests for abort api
-- [ ] Determine good name for groups [it, describe, note, script], [hook]?
-- [ ] Add tag API
-- [ ] Add timeouts for notes
 - [ ] Freeze context (aside from .data)
+- [ ] Add tag API
 - [ ] Finish test cases for remaining user API
 - [ ] Test and correct nesting things in hooks
 - [ ] Create bin scripts

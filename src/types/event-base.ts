@@ -7,5 +7,4 @@ export interface EventBase {
     eventType: EventType;
     eventStatusType: EventStatusType;
     exception?: Error;
-    description: string;
 }

@@ -174,7 +174,6 @@ export class Testish {
             eventType: EventType.ENTER,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
-            description: this.rootState.context.description,
             context: this.rootState.context as ContextBlock
         });
     }
@@ -185,7 +184,6 @@ export class Testish {
             eventType: EventType.LEAVE,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
-            description: this.rootState.context.description,
             context: this.rootState.context as ContextBlock
         });
     }
@@ -209,7 +207,6 @@ export class Testish {
                 ownerState,
                 eventBase: {
                     blockType: BlockType.HOOK,
-                    description: context.description,
                     hookOptions: hook.settings,
                     context
                 },
@@ -231,7 +228,6 @@ export class Testish {
                 ownerState,
                 eventBase: {
                     blockType: BlockType.HOOK,
-                    description: context.description,
                     hookOptions: hook.settings,
                     context
                 },
@@ -254,7 +250,6 @@ export class Testish {
                 ownerState,
                 eventBase: {
                     blockType: BlockType.HOOK,
-                    description: context.description,
                     hookOptions: hook.settings,
                     context
                 },
@@ -430,7 +425,7 @@ export class Testish {
             eventType: EventType.SKIP,
             eventStatusType: EventStatusType.SUCCESS,
             exception: options.exception,
-            context: options.ownState || options.ownerState
+            context: (options.ownState || options.ownerState).context
         }));
     }
 
@@ -616,7 +611,6 @@ export class Testish {
                             propagateExceptions: blockType !== BlockType.IT,
                             eventBase: {
                                 blockType,
-                                description: ownState.context.description,
                                 context: ownState.context as ContextBlock
                             }
                         }
@@ -629,7 +623,6 @@ export class Testish {
                             ownState,
                             eventBase: {
                                 blockType,
-                                description: ownState.context.description,
                                 context: ownState.context as ContextBlock
                             },
                             exception
@@ -803,7 +796,6 @@ export class Testish {
                     blockType: BlockType.SCRIPT,
                     eventType: EventType.NOTE,
                     eventStatusType: EventStatusType.EXCEPTION,
-                    description: this.rootState.context.description,
                     context: this.rootState.context as ContextBlock,
                     exception
                 });

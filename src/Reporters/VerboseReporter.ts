@@ -38,7 +38,7 @@ export class VerboseReporter implements Reporter {
         const eventTypeSymbol = VerboseReporter.eventTypeMap[event.eventType];
         const eventStatusTypeSymbol = VerboseReporter.eventStatusTypeMap[event.eventStatusType];
 
-        let description = event.description ? `- ${event.description}` : '<anonymous>';
+        let description = !event.context ? '<no context>' : !event.context.description ? '<anonymous>' : `- ${event.context.description}`;
         let blockType = `${event.blockType}`;
 
         if (isEventBlock(event)) {
