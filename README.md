@@ -19,14 +19,14 @@ TODO:
 - [x] Remove description from Event
 - [x] Test note timeouts
 - [x] Test it timeouts
-- [ ] Test hook timeouts
+- [x] Test hook timeouts
 - [x] Validate ErrorTimeout context
+- [ ] Add tests for abort api
 - [ ] Validate ErrorAbort context
 - [ ] Validate ErrorNotJson context
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Rename variables to match new type names
 - [ ] Reorder methods
-- [ ] Add tests for abort api
 - [ ] Freeze context (aside from .data)
 - [ ] Add tag API
 - [ ] Finish test cases for remaining user API

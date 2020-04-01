@@ -1,9 +1,17 @@
 import {Testish} from "../src/Testish";
-import {JsonReporter, PipeReporter, VerboseReporter} from "../src/Reporters";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import {BlockType, ErrorNotJson, ErrorTimeout, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
+import {
+    BlockType,
+    ErrorNotJson,
+    ErrorTimeout,
+    EventStatusType,
+    EventType,
+    HookDepth,
+    HookOnceWhen,
+    HookWhen
+} from "../src/types";
 import {Guid} from "guid-typescript";
 import {createApi, getEx, mutatingMerge} from "./_util";
 
@@ -319,6 +327,30 @@ describe('Testish', () => {
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+        });
+        it('hook should time out', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
+
+            api.hook('x', async (context) => {
+                EX.context = context;
+                await new Timeout(50);
+            }, { when: HookOnceWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.DESCRIBE], timeout: 10 });
+
+            api.describe('a', () => {});
+
+            await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
