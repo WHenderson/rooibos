@@ -5,9 +5,12 @@ import {
     CallbackBlock,
     CallbackHook,
     CallbackNote,
-    Context, ContextBlock,
-    ContextHook, ContextNote,
-    ErrorAbort, ErrorNotJson,
+    Context,
+    ContextBlock,
+    ContextHook,
+    ContextNote,
+    ErrorAbort,
+    ErrorNotJson,
     ErrorTimeout,
     Event,
     EventBlock,
@@ -30,7 +33,7 @@ import {
     UserOptionsBlock,
     UserOptionsHook
 } from "./types";
-import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Deconstructed} from 'advanced-promises';
+import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Deconstructed, AbortApiInternal} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
 import {strict as assert} from "assert";
 import {Guid} from "guid-typescript";
@@ -63,6 +66,8 @@ export class Testish {
                 aapi: options.aapi
             }
         );
+
+        this.rootState.promiseStart.resolve(); // TODO: Change input options
     }
 
     private *stateIter(state: State) {
@@ -73,7 +78,7 @@ export class Testish {
     }
 
     private createContext(state: State, callback: Callback, userOptions: UserOptions) : Context {
-        const context : Omit<Context, 'aapi'> = Object.assign(
+        const context : Omit<Context, 'aapi' | 'exception' | 'abort'> = Object.assign(
             {},
             userOptions,
             {
@@ -83,14 +88,18 @@ export class Testish {
                 callback
             },
         );
-        Object.defineProperty(context, 'aapi', { get: () => state });
+        Object.defineProperty(context, 'aapi', { get: () => state.aapi, enumerable: true });
+        Object.defineProperty(context, 'exception', { get: () => state.exception, enumerable: true });
+        Object.defineProperty(context, 'abort', { get: () => state.abort, enumerable: true });
         return context as Context;
     }
 
     private createState(parentState: State, blockType: BlockType, callback: Callback, userOptions: UserOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
+        const start = new Deconstructed<void>();
         const state : State = {
             blockType: blockType,
-            promise: stateOptions.promise || Promise.resolve(),
+            promiseStart: start,
+            promise: start.then(() => stateOptions.promise || Promise.resolve()),
             hooks: [],
             aapi: stateOptions.aapi || new AbortApiPublic(),
             context: undefined,
@@ -433,7 +442,7 @@ export class Testish {
         callback: CallbackBlock | CallbackHook,
         timeout: number,
         options: {
-            ownState?: State;
+            ownState: State;
             ownerState: State;
             eventBase:
                 Omit<EventBlock, 'eventType' | 'eventStatusType'> |
@@ -444,123 +453,171 @@ export class Testish {
         ) {
         const RES_ABORT = new ErrorAbort(options.ownState && options.ownState.context);
         const RES_TIMEOUT = new ErrorTimeout(options.ownState && options.ownState.context);
-        let exception: Error = undefined;
         let res : void | Error = undefined;
         let eventStatusType: EventStatusType = EventStatusType.SUCCESS;
 
         const report = (event: Partial<Event> & { eventType: EventType, eventStatusType: EventStatusType }) => this.report(Object.assign({}, options.eventBase, event));
 
         if (options.ownerState && options.ownerState.aapi && options.ownerState.aapi.state !== ABORT_STATE.NONE) {
-            await report({ eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS });
+            await report({ eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: options.ownState.exception });
             return;
         }
+
+        const state = options.ownState;
 
         await report({ eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS });
 
         try {
+            // Setup the callback inside an Abortable
             const waitCallback = Abortable.fromAsync<void | Error>(async () => {
                 await Promise.resolve();
 
-                const state = options.ownState || options.ownerState;
+                // Allow nested to resolve (callback may wait on them)
+                state.promiseStart.resolve();
 
                 try {
                     await callback.call(state.context, state.context);
-                } catch (ex) {
-                    exception = exception || ex;
+                }
+                catch (ex) {
+                    state.exception = state.exception || ex;
 
                     eventStatusType = EventStatusType.EXCEPTION;
 
-                    // signal abort
+                    // signal abort (ensuring race is won by the abort)
                     const waitAbort = wait.abortWith({resolve: RES_ABORT});
                     // report error
-                    await report({ eventType: EventType.NOTE, eventStatusType, exception });
+                    await report({ eventType: EventType.NOTE, eventStatusType, exception: state.exception });
                     // wait for abort to finish
                     await waitAbort;
 
                     throw ex;
-                } finally {
-                    // Evaluate nested
-                    if (options.ownState) {
-                        await options.ownState.promise
-                            // afterOnce
-                            .then(
-                                async () => {
-                                    await this._stepRunAfterOnceHooks(options.ownState);
-                                },
-                                async (exception) => {
-                                    await this._stepSkipAfterOnceHooks(options.ownState, exception);
-                                    throw exception;
-                                }
-                            )
-                            // unused
-                            .then(
-                                async () => {
-                                    await this._stepUnusedHooks(options.ownState);
-                                },
-                                async (exception) => {
-                                    await this._stepUnusedHooks(options.ownState, exception);
-                                    throw exception;
-                                }
-                            );
-                    }
+                }
+                finally {
+                    await state.promise
+                        // afterOnce
+                        .then(
+                            async () => {
+                                await this._stepRunAfterOnceHooks(state);
+                            },
+                            async (exception) => {
+                                await this._stepSkipAfterOnceHooks(state, exception);
+                                throw exception;
+                            }
+                        )
+                        // unused
+                        .then(
+                            async () => {
+                                await this._stepUnusedHooks(state);
+                            },
+                            async (exception) => {
+                                await this._stepUnusedHooks(state, exception);
+                                throw exception;
+                            }
+                        );
                 }
             });
 
+            // Chain Aborts
             const waitAbort = options.ownerState && options.ownerState.aapi ? waitCallback.withAutoAbort(options.ownerState.aapi, {resolve: RES_ABORT}) : waitCallback;
+
+            // Optional timeout
             const wait = waitAbort.withTimeout(timeout, {resolve: RES_TIMEOUT});
 
-            if (options.ownState)
-                options.ownState.aapi = wait.aapi;
+            // create the abort context abort api
+            const promiseAbortComplete = new Deconstructed();
+            const iapi = new AbortApiInternal();
+            wait.aapi.on(async () => {
+                const ignore = promiseAbortComplete
+                    .then(() => {
+                        iapi.abort();
+                    });
+            });
 
+            // Save state for use in context
+            state.aapi = iapi.aapi;
+            state.abort = () =>
+                wait
+                    .abortWith({ resolve: RES_ABORT })
+                    .then(
+                        (res?) => {
+                            if (res === RES_ABORT)
+                                return { status: EventStatusType.ABORT, exception: res };
+                            if (res === RES_TIMEOUT)
+                                return { status: EventStatusType.TIMEOUT, exception: res };
+
+                            return { status: EventStatusType.SUCCESS };
+                        },
+                        (exception) => {
+                            return { status: EventStatusType.EXCEPTION, exception };
+                        }
+                    );
+
+            // Wait for callback or early termination
             res = await wait;
 
+            // Timeout
             if (res === RES_TIMEOUT) {
-                exception = res;
+                state.exception = res;
                 eventStatusType = EventStatusType.TIMEOUT;
-                await report({ eventType: EventType.NOTE, eventStatusType, exception });
+                await report({ eventType: EventType.NOTE, eventStatusType, exception: state.exception });
             }
-            else if (res === RES_ABORT && !exception) {
+            // Abort
+            else if (res === RES_ABORT && !state.exception) {
+                state.exception = res;
                 eventStatusType = EventStatusType.ABORT;
-                await report({ eventType: EventType.NOTE, eventStatusType, exception });
+                await report({ eventType: EventType.NOTE, eventStatusType, exception: state.exception });
             }
+            // Only accept void/ABORT/TIMOUT responses
+            else
+                res = undefined;
 
+            promiseAbortComplete.resolve();
+
+            // Add optional work to do which is outside the callback and does not have the timeout restriction
             let inner = wait.promise;
-            if (options.ownState && options.ownState.promiseAfter) {
+            if (state && state.promiseAfter) {
                 inner = inner.then(
                     () => {
-                        if (exception)
-                            options.ownState.promiseAfter.start.reject(exception);
+                        if (state.exception)
+                            state.promiseAfter.start.reject(state.exception);
                         else
-                            options.ownState.promiseAfter.start.resolve();
-                        return options.ownState.promiseAfter.end;
+                            state.promiseAfter.start.resolve();
+                        return state.promiseAfter.end;
                     },
                     (exception) => {
-                        options.ownState.promiseAfter.start.reject(exception);
-                        return options.ownState.promiseAfter.end;
+                        state.promiseAfter.start.reject(exception);
+                        return state.promiseAfter.end;
                     }
                 )
             }
+
+            // Wait for remainder of callback (add optional promiseAfter)
             await inner;
 
-            if (res === RES_TIMEOUT)
+            // re-throw exceptions
+            if (state.exception)
             { // noinspection ExceptionCaughtLocallyJS
-                throw res;
+                throw state.exception;
             }
         }
         catch (ex) {
-            if (!exception) {
-                exception = ex;
+            // Handle generic exceptions
+            if (!state.exception) {
+                state.exception = ex;
                 eventStatusType = EventStatusType.EXCEPTION;
-                await report({ eventType: EventType.NOTE, eventStatusType, exception });
+                await report({ eventType: EventType.NOTE, eventStatusType, exception: state.exception });
             }
 
+            // 'it' blocks do not propagate exceptions, they swallow them
             if (options.propagateExceptions)
                 throw ex;
         }
         finally {
-            this.state.aapi = undefined;
+            // Clean up
+            state.aapi = undefined;
+            state.abort = undefined;
 
-            await report({ eventType: EventType.LEAVE, eventStatusType, exception });
+            await report({ eventType: EventType.LEAVE, eventStatusType, exception: state.exception });
         }
     }
 
@@ -767,10 +824,7 @@ export class Testish {
         );
     }
     public done() : Promise<void> {
-        if (this.state !== this.rootState)
-            return this.state.promise;
-
-        return this.state.promise
+        return this.rootState.promise
             // move to the end of the queue
             .then(() => this.state.promise, () => this.state.promise) // TODO: test that requeuing at the back of the line works
             // afterOnce

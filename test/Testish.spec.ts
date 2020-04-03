@@ -3,14 +3,14 @@ import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {
-    BlockType,
+    BlockType, ErrorAbort,
     ErrorNotJson,
     ErrorTimeout,
     EventStatusType,
     EventType,
     HookDepth,
     HookOnceWhen,
-    HookWhen
+    HookWhen, ResultAbort
 } from "../src/types";
 import {Guid} from "guid-typescript";
 import {createApi, getEx, mutatingMerge} from "./_util";
@@ -382,6 +382,49 @@ describe('Testish', () => {
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
             ], events));
+        });
+    });
+
+    describe('abort', () => {
+        it('describe should be abortable', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            let res = EventStatusType.UNUSED;
+
+            api.describe('a', async (context) => {
+                EX.context = context;
+
+                // abort after 10ms
+                new Timeout(10).then(async () => {
+                    // wait for abort to finish and stash the result
+                    res = (await context.abort() as ResultAbort).status;
+                });
+
+                await api.note(Guid.createEmpty(), 'not yet aborted', undefined);
+                // wait until aborted
+                await new Timeout(Timeout.INF).withAutoAbort(context.aapi);
+                await api.note(Guid.createEmpty(), 'should be skipped', undefined);
+            });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(ErrorAbort, 'Abort');
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.ABORT, exception: EX },
+
+                { context: { description: 'should be skipped', parent: { exception: EX }}, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+
         });
     });
 
