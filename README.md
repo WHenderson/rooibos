@@ -21,7 +21,7 @@ TODO:
 - [x] Test it timeouts
 - [x] Test hook timeouts
 - [x] Validate ErrorTimeout context
-- [ ] Add tests for abort api
+- [x] Add tests for abort api
 - [x] Move before/after blocks to the appropriate location? (yes they are)
 - [ ] Fix constructor and add 'start' method
 - [ ] Validate ErrorAbort context
@@ -39,3 +39,4 @@ TODO:
 - [ ] Add documentation
 - [ ] Add .only semantics - should filter _just_ `it` blocks. Check what mocha does for mixing describe and it blocks
 - [ ] Move exception out of Event and into Context?
+- [ ] Add tests for using await vs no await

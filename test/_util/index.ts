@@ -110,7 +110,7 @@ export function cloneMerge({ expected, actual }) {
         );
     }
 
-    if (isAtomic(expected) && isAtomic(actual))
+    if (isAtomic(expected) || isAtomic(actual))
         return out;
 
     if (Array.isArray(expected) !== Array.isArray(actual))

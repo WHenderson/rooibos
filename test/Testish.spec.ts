@@ -401,10 +401,10 @@ describe('Testish', () => {
                     res = (await context.abort() as ResultAbort).status;
                 });
 
-                await api.note(Guid.createEmpty(), 'not yet aborted', undefined);
+                api.note(Guid.createEmpty(), 'not yet aborted', undefined);
                 // wait until aborted
                 await new Timeout(Timeout.INF).withAutoAbort(context.aapi);
-                await api.note(Guid.createEmpty(), 'should be skipped', undefined);
+                api.note(Guid.createEmpty(), 'should be skipped', undefined);
             });
 
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorAbort, 'Abort');
@@ -421,6 +421,77 @@ describe('Testish', () => {
 
                 { context: { description: 'should be skipped', parent: { exception: EX }}, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+
+        });
+        it('it should be abortable', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            let res = EventStatusType.UNUSED;
+
+            api.it('a', async (context) => {
+                EX.context = context;
+
+                // abort after 10ms
+                new Timeout(10).then(async () => {
+                    // wait for abort to finish and stash the result
+                    res = (await context.abort() as ResultAbort).status;
+                });
+
+                api.note(Guid.createEmpty(), 'not yet aborted', undefined);
+                // wait until aborted
+                await new Timeout(Timeout.INF).withAutoAbort(context.aapi);
+                api.note(Guid.createEmpty(), 'should be skipped', undefined);
+            });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.ABORT, exception: EX },
+
+                { context: { description: 'should be skipped', parent: { exception: EX }}, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+            ], events));
+
+        });
+        it('note should be abortable', async () => {
+            const { api, events } = createApi();
+
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            let res = EventStatusType.UNUSED;
+
+            api.note(Guid.createEmpty(), 'a', async (context) => {
+                EX.context = context;
+
+                // abort after 10ms
+                new Timeout(10).then(async () => {
+                    // wait for abort to finish and stash the result
+                    res = (await context.abort() as ResultAbort).status;
+                });
+
+                await new Timeout(Timeout.INF).withAutoAbort(context.aapi);
+
+                return 'should be aborted';
+            });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(ErrorAbort, 'Abort');
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.ABORT, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
