@@ -33,7 +33,7 @@ import {
     UserOptionsBlock,
     UserOptionsHook, UserOptionsScript
 } from "./types";
-import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Deconstructed, AbortApiInternal} from 'advanced-promises';
+import {ABORT_STATE, Abortable, AbortApi, Deconstructed, AbortApiInternal, Timeout} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
 import {strict as assert} from "assert";
 import {Guid} from "guid-typescript";
@@ -48,6 +48,9 @@ export class Testish {
     constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsScript) {
         this.reporter = stateOptions.reporter || new NullReporter();
         this.iapi = new AbortApiInternal();
+
+        if (userOptions && userOptions.timeout)
+            new Timeout(userOptions.timeout).then(() => this.abort()); // TODO: Determine error handling requirements here
 
         this.rootState = this.state = this.createState(
             undefined,
