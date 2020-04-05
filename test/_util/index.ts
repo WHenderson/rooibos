@@ -3,7 +3,7 @@ import {Testish} from "../../src";
 import instantiate = WebAssembly.instantiate;
 import {UserOptionsScript} from "../../src/types";
 
-export function createApi(stateOptions: { promise?: Promise<void>, start: boolean }, userOptions : UserOptionsScript) {
+export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsScript) {
     stateOptions = Object.assign({ start: true }, stateOptions);
     userOptions = Object.assign({ description: undefined }, userOptions);
 
