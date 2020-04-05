@@ -31,7 +31,7 @@ import {
     State,
     UserOptions,
     UserOptionsBlock,
-    UserOptionsHook
+    UserOptionsHook, UserOptionsScript
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiPublic, Deconstructed, AbortApiInternal} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -42,18 +42,20 @@ export class Testish {
     private readonly reporter : Reporter;
     private state: State;
     private rootState : State;
+    private iapi : AbortApiInternal;
 
-    constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object, aapi?:AbortApi } = {}) {
-        this.reporter = options.reporter || new NullReporter();
+    //constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object } = {}) {
+    constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsScript) {
+        this.reporter = stateOptions.reporter || new NullReporter();
+        this.iapi = new AbortApiInternal();
+
         this.rootState = this.state = this.createState(
             undefined,
             BlockType.SCRIPT,
             undefined,
+            userOptions,
             {
-                description: options.description
-            },
-            {
-                promise: (options.promise || Promise.resolve())
+                promise: (stateOptions.promise || Promise.resolve())
                     .then(
                         async () => {
                             await this._stepScriptEnter();
@@ -63,11 +65,9 @@ export class Testish {
                             throw exception;
                         }
                     ),
-                aapi: options.aapi
+                aapi: this.iapi.aapi
             }
         );
-
-        this.rootState.promiseStart.resolve(); // TODO: Change input options
     }
 
     private *stateIter(state: State) {
@@ -78,16 +78,16 @@ export class Testish {
     }
 
     private createContext(state: State, callback: Callback, userOptions: UserOptions) : Context {
-        const context : Omit<Context, 'aapi' | 'exception' | 'abort'> = Object.assign(
+        const context : Omit<Context, 'aapi' | 'exception' | 'abort' | 'data'> = Object.assign(
             {},
             userOptions,
             {
                 blockType: state.blockType,
                 parent: state.parentState && state.parentState.context as ContextBlock,
-                data: {},
                 callback
             },
         );
+        (context as UserOptions).data = Object.assign({}, userOptions.data);
         Object.defineProperty(context, 'aapi', { get: () => state.aapi, enumerable: true });
         Object.defineProperty(context, 'exception', { get: () => state.exception, enumerable: true });
         Object.defineProperty(context, 'abort', { get: () => state.abort, enumerable: true });
@@ -101,7 +101,7 @@ export class Testish {
             promiseStart: start,
             promise: start.then(() => stateOptions.promise || Promise.resolve()),
             hooks: [],
-            aapi: stateOptions.aapi || new AbortApiPublic(),
+            aapi: stateOptions.aapi || undefined,
             context: undefined,
             parentState: parentState,
             triggers: []
@@ -823,6 +823,10 @@ export class Testish {
             })
         );
     }
+
+    public start() : void {
+        this.rootState.promiseStart.resolve();
+    }
     public done() : Promise<void> {
         return this.rootState.promise
             // move to the end of the queue
@@ -868,5 +872,12 @@ export class Testish {
                     throw exception;
                 }
             );
+    }
+    public abort() : Promise<void> {
+        return this.iapi.abort();
+    }
+    public withAutoAbort(aapi: AbortApi) : this {
+        this.iapi.withAutoAbort(aapi);
+        return this;
     }
 }

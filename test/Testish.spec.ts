@@ -21,6 +21,19 @@ const expect = chai.expect;
 
 
 describe('Testish', () => {
+    describe('script', () => {
+       it('empty script should not stall', async () => {
+           const { api, events } = createApi();
+
+           await api.done();
+
+           expect(events).to.deep.equal(mutatingMerge([
+               { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+           ], events));
+       });
+    });
+
     describe('describe', () => {
         it('single describe', async () => {
             const { api, events } = createApi();

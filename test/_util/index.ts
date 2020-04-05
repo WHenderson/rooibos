@@ -1,18 +1,28 @@
 import {JsonReporter, PipeReporter, VerboseReporter} from "../../src/Reporters";
 import {Testish} from "../../src";
 import instantiate = WebAssembly.instantiate;
+import {UserOptionsScript} from "../../src/types";
 
-export function createApi(options = {}) {
+export function createApi(stateOptions: { promise?: Promise<void>, start: boolean }, userOptions : UserOptionsScript) {
+    stateOptions = Object.assign({ start: true }, stateOptions);
+    userOptions = Object.assign({ description: undefined }, userOptions);
+
     const jsonReporter = new JsonReporter();
-    const api = new Testish(Object.assign(
-        {
-            reporter: new PipeReporter([
-                jsonReporter,
-                new VerboseReporter({ indent: true })
-            ])
-        },
-        options
-    ));
+    const api = new Testish(
+        Object.assign(
+            {
+                reporter: new PipeReporter([
+                    jsonReporter,
+                    new VerboseReporter({ indent: true })
+                ])
+            },
+            stateOptions
+        ),
+        userOptions
+    );
+
+    if (stateOptions.start)
+        api.start();
 
     return { events: jsonReporter.events, api };
 }

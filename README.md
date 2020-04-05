@@ -23,20 +23,55 @@ TODO:
 - [x] Validate ErrorTimeout context
 - [x] Add tests for abort api
 - [x] Move before/after blocks to the appropriate location? (yes they are)
-- [ ] Fix constructor and add 'start' method
+- [x] Fix constructor and add 'start' method
 - [ ] Validate ErrorAbort context
 - [ ] Validate ErrorNotJson context
+- [ ] Add tests for using await vs no await
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Rename variables to match new type names
 - [ ] Reorder methods
 - [ ] Freeze context (aside from .data)
-- [ ] Add tag API
 - [ ] Finish test cases for remaining user API
-- [ ] Test and correct nesting things in hooks
+- [ ] Test and correct nesting things in hooks/notes (i.e. make sure they chain off of the correct state... what /is/ the correct state?)
 - [ ] Create bin scripts
+- [ ] Move exception out of Event and into Context? - may be useful for children? will cause circular dependency since exceptions contain context
+- [ ] Add .only semantics - should filter _just_ `it` blocks. Check what mocha does for mixing describe and it blocks
+- [ ] Add tag API
+- [ ] Add documentation
 - [ ] Release advance-promise library
 - [ ] Release this library
-- [ ] Add documentation
-- [ ] Add .only semantics - should filter _just_ `it` blocks. Check what mocha does for mixing describe and it blocks
-- [ ] Move exception out of Event and into Context?
-- [ ] Add tests for using await vs no await
+
+# .only semantics
+
+note: the startup of this may be flawed
+
+it.only
+it.tag
+tag().it
+only(tags-or-predicate) // cumulative intersection of all .only calls // only works on .it blocks
+
+.only would be retoactive/global. so anything not yet resolved will act as if the .only was done before it ran
+thus
+
+```
+it 1
+describe
+    it 2
+    it.only 3
+    it 4
+it 5
+```
+
+would only run 1 and 3... maybe too flawed?
+or maybe just use .tag and make .only for adding predicates (defaults to tagged?)
+
+```
+only.tag()
+it 1
+describe
+    it 2
+    it.tag 3
+    it 4
+it 5
+```
+
