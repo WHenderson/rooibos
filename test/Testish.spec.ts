@@ -3,14 +3,16 @@ import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {
-    BlockType, ErrorAbort,
+    BlockType,
+    ErrorAbort,
     ErrorNotJson,
     ErrorTimeout,
     EventStatusType,
     EventType,
     HookDepth,
     HookOnceWhen,
-    HookWhen, ResultAbort
+    HookWhen,
+    ResultAbort
 } from "../src/types";
 import {Guid} from "guid-typescript";
 import {createApi, getEx, mutatingMerge} from "./_util";
@@ -1353,6 +1355,134 @@ describe('Testish', () => {
                 ], events));
 
             });
+        });
+    });
+
+    describe('order', () => {
+        it('await should not change order of describe', async () => {
+            const { api, events } = createApi();
+
+            api.describe('1', () => {
+
+            });
+            await api.describe('2', () => {
+            });
+            api.describe('3', () => {
+            });
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+            ], filteredEvents));
+        });
+        it('await should not change order of it', async () => {
+            const { api, events } = createApi();
+
+            api.it('1', () => {
+
+            });
+            await api.it('2', () => {
+            });
+            api.it('3', () => {
+            });
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+            ], filteredEvents));
+        });
+        it('await should not change order of note', async () => {
+            const { api, events } = createApi();
+
+            api.note(Guid.createEmpty(), '1', () => 'x');
+            await api.note(Guid.createEmpty(), '2', () => 'x');
+            api.note(Guid.createEmpty(), '3', () => 'x');
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+            ], filteredEvents));
+        });
+        it('await should not change order of describe when nested', async () => {
+            const { api, events } = createApi();
+
+            api.describe('0', async () => {
+                api.describe('1', () => {
+                });
+                await api.describe('2', () => {
+                });
+                api.describe('3', () => {
+                });
+            });
+            api.describe('4', async () => {});
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '0' } },
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+                { context: { description: '4' } },
+            ], filteredEvents));
+        });
+        it('await should not change order of it when nested', async () => {
+            const { api, events } = createApi();
+
+            api.describe('0', async () => {
+                api.it('1', () => {
+                });
+                await api.it('2', () => {
+                });
+                api.it('3', () => {
+                });
+            });
+            api.describe('4', async () => {});
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '0' } },
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+                { context: { description: '4' } },
+            ], filteredEvents));
+        });
+        it('await should not change order of note when nested', async () => {
+            const { api, events } = createApi();
+
+            api.describe('0', async () => {
+                api.note(Guid.createEmpty(), '1', () => 'x');
+                await api.note(Guid.createEmpty(),'2', () => 'x');
+                api.note(Guid.createEmpty(),'3', () => 'x');
+            });
+            api.describe('4', async () => {});
+
+            await api.done();
+
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.SCRIPT && event.eventType === EventType.ENTER);
+            expect(filteredEvents).to.deep.equal(mutatingMerge([
+                { context: { description: '0' } },
+                { context: { description: '1' } },
+                { context: { description: '2' } },
+                { context: { description: '3' } },
+                { context: { description: '4' } },
+            ], filteredEvents));
         });
     });
 });

@@ -125,7 +125,7 @@ describe('user api', () => {
         });
     });
     describe('options', () => {
-        it.only('tag', async () => {
+        it('tag', async () => {
             const { api: iapi, events } = createApi();
             const api = testish(iapi);
 

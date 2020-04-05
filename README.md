@@ -24,9 +24,9 @@ TODO:
 - [x] Add tests for abort api
 - [x] Move before/after blocks to the appropriate location? (yes they are)
 - [x] Fix constructor and add 'start' method
+- [x] Add tests for using await vs no await
 - [ ] Validate ErrorAbort context
 - [ ] Validate ErrorNotJson context
-- [ ] Add tests for using await vs no await
 - [ ] Filter keys in UserOptions/Context to only valid options (hide internal workings)
 - [ ] Rename variables to match new type names
 - [ ] Reorder methods
