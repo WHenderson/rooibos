@@ -8,7 +8,7 @@ import {
     HookEachWhen,
     HookOnceWhen,
     UserOptionsHook, HookWhen,
-    JsonValue
+    JsonValue, UserOptions
 } from "./types";
 
 export type DescribeFunc =
@@ -24,6 +24,15 @@ export type HookFunc =
     ((description: string, callback: CallbackHook) => void | Promise<void>) &
     ((callback: CallbackHook) => void | Promise<void>);
 
+export type TagFunc =
+    (...tags: (string | string[])[]) => UserApiRoot;
+
+export type TimeoutFunc =
+    (timeout: number) => UserApiRoot;
+
+export type TestishFunc =
+    (options: Partial<{ timeout: number; }>) => UserApiRoot;
+
 export interface UserApiRoot {
     describe: DescribeFunc;
     it: ItFunc;
@@ -34,9 +43,12 @@ export interface UserApiRoot {
     beforeEach: HookApiFunc;
     afterEach: HookApiFunc;
 
-    timeout: (timeout: number) => UserApiRoot;
-    testish: (options: Partial<{ timeout: number; }>) => UserApiRoot;
+    tag: TagFunc;
+    timeout: TimeoutFunc;
+    testish: TestishFunc;
 }
+
+
 
 //interface UserApiRootInternal extends UserApiRoot {
 //    settings: (description : string | HookCallback, callback? : HookCallback) => void | Promise<void>;
@@ -61,7 +73,7 @@ export type HookApiFunc = HookFunc & HookApi;
 export function testish(testish: Testish, defaults?: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
     const instance = testish;
 
-    function testishApi(defaults: Partial<{ timeout: number; }>) : UserApiRoot {
+    function testishApi(defaults: Partial<Omit<UserOptions, 'description'>>) : UserApiRoot {
         defaults = Object.assign({}, defaults);
 
         const hookDefaults = {
@@ -75,6 +87,12 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
             return testish({ timeout });
         }
 
+        // tag
+        function tag(...tags: (string | string[])[]) : UserApiRoot {
+            const flatTags = tags.map(tag => typeof tag === 'string' ? [tag] : tag).flat(1);
+            return testish({ tags: (defaults.tags || []).concat(flatTags) });
+        }
+
         // testish
         function testish(options: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
             return testishApi(Object.assign({}, defaults, options));
@@ -86,7 +104,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
                 callback = description;
                 description = description && description.name || undefined;
             }
-            return instance.describe(description, callback, { timeout: defaults.timeout });
+            return instance.describe(description, callback, { timeout: defaults.timeout, tags: defaults.tags, data: defaults.data });
         }
 
         // it
@@ -95,7 +113,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
                 callback = description;
                 description = description && description.name || undefined;
             }
-            return instance.it(description, callback, { timeout: defaults.timeout });
+            return instance.it(description, callback, { timeout: defaults.timeout, tags: defaults.tags, data: defaults.data });
         }
 
         // note
@@ -104,7 +122,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
                 value = description;
                 description = value && typeof value === 'function' && value.name || undefined;
             }
-            return instance.note(id, description as string, value);
+            return instance.note(id, description as string, value, { timeout: defaults.timeout, tags: defaults.tags, data: defaults.data });
         }
 
         // settings
@@ -199,7 +217,8 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
             afterEach: addHookApi(afterEach, HookEachWhen.AFTER_EACH),
 
             timeout,
-            testish
+            testish,
+            tag
         }
         
     }

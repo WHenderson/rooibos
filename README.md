@@ -60,13 +60,15 @@ describe
     it.only 3
     it 4
 it 5
+
 ```
 
 would only run 1 and 3... maybe too flawed?
 or maybe just use .tag and make .only for adding predicates (defaults to tagged?)
 
 ```
-only.tag()
+testish.only.tag()
+
 it 1
 describe
     it 2

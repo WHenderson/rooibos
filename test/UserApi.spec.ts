@@ -124,4 +124,22 @@ describe('user api', () => {
             ], events));
         });
     });
+    describe('options', () => {
+        it.only('tag', async () => {
+            const { api: iapi, events } = createApi();
+            const api = testish(iapi);
+
+            api.tag('a').tag('b', 'c').tag(['d','e']).tag('f',['g']).it(() => {
+            });
+
+            await iapi.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+            ], events));
+        })
+    });
 });
