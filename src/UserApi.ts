@@ -59,8 +59,9 @@ export interface HookApiKnownDepth {
 }
 
 export interface HookApi {
-    it: HookFunc;
+    script: HookFunc;
     describe: HookFunc;
+    it: HookFunc;
 
     shallow: HookApiKnownDepth & HookFunc;
     deep: HookApiKnownDepth & HookFunc;
@@ -171,6 +172,9 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }        
 
         function addHookApi(root: HookFunc, when: HookWhen) : HookApiFunc {
+            function script(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
+                return hook(description, callback, { when, blockTypes: [BlockType.SCRIPT] });
+            }
             function describe(description : string | CallbackHook, callback? : CallbackHook) : void | Promise<void> {
                 return hook(description, callback, { when, blockTypes: [BlockType.DESCRIBE] });
             }
@@ -186,6 +190,9 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
             }
 
             function addHookApiKnownDepth(root: HookFunc, depth: HookDepth) : HookApiKnownDepth & HookFunc {
+                function script(description : string | CallbackBlock, callback? : CallbackHook) : void | Promise<void> {
+                    return hook(description, callback, { when, depth, blockTypes: [BlockType.SCRIPT] });
+                }
                 function describe(description : string | CallbackBlock, callback? : CallbackHook) : void | Promise<void> {
                     return hook(description, callback, { when, depth, blockTypes: [BlockType.DESCRIBE] });
                 }
@@ -196,6 +203,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
                 return Object.assign(
                     root,
                     {
+                        script,
                         describe,
                         it
                     }
@@ -205,6 +213,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
             return Object.assign(
                 root,
                 {
+                    script,
                     describe,
                     it,
                     shallow: addHookApiKnownDepth(shallow, HookDepth.SHALLOW),

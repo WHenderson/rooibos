@@ -7,6 +7,3 @@ export enum BlockType {
     HOOK = 'hook'
 }
 
-export function isHookTarget(blockType: BlockType) {
-    return blockType === BlockType.SCRIPT || blockType === BlockType.DESCRIBE || blockType === BlockType.IT;
-}
