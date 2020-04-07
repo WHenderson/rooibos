@@ -10,7 +10,11 @@ import {
     UserOptionsHook, HookWhen,
     JsonValue, UserOptions
 } from "./types";
+import {Script} from "vm";
 
+export type ScriptFunc =
+    ((description: string, callback: CallbackBlock) => void | Promise<void>) &
+    ((callback: CallbackBlock) => void | Promise<void>);
 export type DescribeFunc =
     ((description: string, callback: CallbackBlock) => void | Promise<void>) &
     ((callback: CallbackBlock) => void | Promise<void>);
@@ -34,6 +38,7 @@ export type TestishFunc =
     (options: Partial<{ timeout: number; }>) => UserApiRoot;
 
 export interface UserApiRoot {
+    script: ScriptFunc;
     describe: DescribeFunc;
     it: ItFunc;
     note: NoteFunc;
@@ -47,13 +52,6 @@ export interface UserApiRoot {
     timeout: TimeoutFunc;
     testish: TestishFunc;
 }
-
-
-
-//interface UserApiRootInternal extends UserApiRoot {
-//    settings: (description : string | HookCallback, callback? : HookCallback) => void | Promise<void>;
-//    testish: (options: Partial<{ timeout: number; } | OptionsHook>) => UserApiRootInternal;
-//}
 
 export interface HookApiKnownDepth {
     it: HookFunc;
@@ -79,7 +77,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         const hookDefaults = {
             timeout: undefined,
             depth: HookDepth.ALL,
-            blockTypes: [BlockType.IT, BlockType.DESCRIBE]
+            blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT]
         };
 
         // timeout
@@ -96,6 +94,15 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         // testish
         function testish(options: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
             return testishApi(Object.assign({}, defaults, options));
+        }
+
+        // describe
+        function script(description : string | CallbackBlock, callback? : CallbackBlock) : void | Promise<void> {
+            if (typeof description !== 'string') {
+                callback = description;
+                description = description && description.name || undefined;
+            }
+            return instance.script(description, callback, { timeout: defaults.timeout, tags: defaults.tags, data: defaults.data });
         }
 
         // describe
@@ -207,6 +214,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }
 
         return {
+            script,
             describe,
             it,
             note,

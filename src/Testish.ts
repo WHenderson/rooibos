@@ -24,7 +24,7 @@ import {
     HookSettingsAndState,
     HookWhen,
     isHookBefore,
-    isHookOnce,
+    isHookOnce, isHookTarget,
     isJsonValue,
     JsonValue,
     Reporter,
@@ -146,12 +146,12 @@ export class Testish {
     private findHooks(fromState: State, blockTypes: BlockType[], when: HookWhen) : HookSettingsAndState[] {
         const hooks : HookSettingsAndState[] = [];
 
-        // Only DESCRIBE and IT have hooks so far
-        blockTypes = blockTypes.filter(blockType => (blockType === BlockType.DESCRIBE || blockType === BlockType.IT));
+        // Only trigger on supported block types
+        blockTypes = blockTypes.filter(blockType => isHookTarget(blockType));
         if (blockTypes.length === 0)
             return hooks;
 
-        // Get all states in the current stack, ordering according appropriately
+        // Get all states in the current stack, ordering appropriately
         const states = isHookBefore(when) ? [...this.stateIter(fromState)].reverse() : [...this.stateIter(fromState)];
 
         for (let state of states) {
@@ -806,6 +806,9 @@ export class Testish {
             );
     }
 
+    public script(description: string, callback: CallbackBlock, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
+        return this.queueBlock(BlockType.SCRIPT, callback, Object.assign({}, options, { description }));
+    }
     public describe(description: string, callback: CallbackBlock, options?: Omit<UserOptionsBlock, 'description'>) : void | Promise<void> {
         return this.queueBlock(BlockType.DESCRIBE, callback, Object.assign({}, options, { description }));
     }
