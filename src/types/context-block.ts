@@ -13,7 +13,7 @@ export interface ContextBlock extends _ContextBlockBase {
 
 function isContextBlock(context: Context) : context is ContextBlock {
     return context && 'callback' in context && (
-        context.blockType === BlockType.SCRIPT ||
+        context.blockType === BlockType.TESTISH ||
         context.blockType === BlockType.DESCRIBE ||
         context.blockType === BlockType.IT
     );

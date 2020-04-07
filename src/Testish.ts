@@ -54,7 +54,7 @@ export class Testish {
 
         this.rootState = this.state = this.createState(
             undefined,
-            BlockType.SCRIPT,
+            BlockType.TESTISH,
             undefined,
             userOptions,
             {
@@ -182,7 +182,7 @@ export class Testish {
 
     private async _stepScriptEnter(exception?: Error) {
         await this.report({
-            blockType: BlockType.SCRIPT,
+            blockType: BlockType.TESTISH,
             eventType: EventType.ENTER,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
@@ -192,7 +192,7 @@ export class Testish {
 
     private async _stepScriptLeave(exception?: Error) {
         await this.report({
-            blockType: BlockType.SCRIPT,
+            blockType: BlockType.TESTISH,
             eventType: EventType.LEAVE,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
@@ -857,7 +857,7 @@ export class Testish {
             // note exceptions
             .catch(async (exception) => {
                 await this.report({
-                    blockType: BlockType.SCRIPT,
+                    blockType: BlockType.TESTISH,
                     eventType: EventType.NOTE,
                     eventStatusType: EventStatusType.EXCEPTION,
                     context: this.rootState.context as ContextBlock,

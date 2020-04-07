@@ -28,7 +28,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'before' }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
                 { context: { description: 'testBefore' }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
                 { context: { description: 'beforeEach' }, hookOptions: { when: HookWhen.BEFORE_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
@@ -38,7 +38,7 @@ describe('user api', () => {
                 { context: { description: 'after' }, hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
                 { context: { description: 'testAfter' }, hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
 
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
 
         });
@@ -59,7 +59,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT, BlockType.DESCRIBE] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.DESCRIBE] }  },
@@ -69,7 +69,7 @@ describe('user api', () => {
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.DEEP, blockTypes: [BlockType.DESCRIBE] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.IT] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.DESCRIBE] }  },
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
 
         });
@@ -94,7 +94,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'describe' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'describe' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'testDescribe' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -120,7 +120,7 @@ describe('user api', () => {
                 { context: { description: 'testNote' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: Guid.createEmpty(), value: 'value' },
                 { context: { description: 'testNote' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
 
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
     });
@@ -135,10 +135,10 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         })
     });

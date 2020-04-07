@@ -1,5 +1,5 @@
 export enum BlockType {
-    SCRIPT = 'script',
+    TESTISH = 'testish',
     DESCRIBE = 'describe',
     IT = 'it',
     NOTE = 'note',
