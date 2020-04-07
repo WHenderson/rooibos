@@ -442,7 +442,7 @@ export class Testish {
     }
 
     private async _stepCallback(
-        callback: CallbackBlock | CallbackHook,
+        callback: CallbackHook | CallbackBlock | ((context: ContextNote) => PromiseLike<void>),
         timeout: number,
         options: {
             ownState: State;
@@ -756,7 +756,7 @@ export class Testish {
         };
 
         await this._stepCallback(
-            async (context) => {
+            async (context : ContextNote) => {
                 res = await (typeof value === 'function' ? value(context) : value);
             },
             options.timeout,

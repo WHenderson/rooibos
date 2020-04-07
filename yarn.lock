@@ -44,6 +44,28 @@
     "@nodelib/fs.scandir" "2.1.3"
     fastq "^1.6.0"
 
+"@types/chai-as-promised@^7.1.2":
+  version "7.1.2"
+  resolved "https://registry.yarnpkg.com/@types/chai-as-promised/-/chai-as-promised-7.1.2.tgz#2f564420e81eaf8650169e5a3a6b93e096e5068b"
+  integrity sha512-PO2gcfR3Oxa+u0QvECLe1xKXOqYTzCmWf0FhLhjREoW3fPAVamjihL7v1MOVLJLsnAMdLcjkfrs01yvDMwVK4Q==
+  dependencies:
+    "@types/chai" "*"
+
+"@types/chai@*", "@types/chai@^4.2.11":
+  version "4.2.11"
+  resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.2.11.tgz#d3614d6c5f500142358e6ed24e1bf16657536c50"
+  integrity sha512-t7uW6eFafjO+qJ3BIV2gGUyZs27egcNRkUdalkud+Qa3+kg//f129iuOFivHDXQ+vnU3fDXuwgv0cqMCbcE8sw==
+
+"@types/djv@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@types/djv/-/djv-2.1.0.tgz#21bebb9a8704fdc60ca1212aaabc1b024a8c9a1c"
+  integrity sha512-ni4Wubp7rk3Zj/CJNEwYXjajggCccEeNKcb3vJVRPRElvXscigAfucP9lIinbynYPNYadQZ/ZGhHUR77R9oWwg==
+
+"@types/docopt@^0.6.31":
+  version "0.6.31"
+  resolved "https://registry.yarnpkg.com/@types/docopt/-/docopt-0.6.31.tgz#f950dc85682858422fb86b6e27f549f539d15e34"
+  integrity sha512-GvX4PhD2u/JV+BmPFXfR8F3cez8cV7WdlTzLA0gB/ckYMMmI2voIKdW3CoKC7dj1K08YC8/M5oACLj410A96fQ==
+
 "@types/mocha@^5.2.7":
   version "5.2.7"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-5.2.7.tgz#315d570ccb56c53452ff8638738df60726d5b6ea"

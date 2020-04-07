@@ -40,40 +40,17 @@ TODO:
 - [ ] Add documentation
 - [ ] Release advance-promise library
 - [ ] Release this library
+- [ ] Determine how to handle standard output/error output capture
 
 # .only semantics
+* Commandline or Configuration filter (command line overrides configuration)
+* Filter only filters it blocks
 
-note: the startup of this may be flawed
-
-it.only
-it.tag
-tag().it
-only(tags-or-predicate) // cumulative intersection of all .only calls // only works on .it blocks
-
-.only would be retoactive/global. so anything not yet resolved will act as if the .only was done before it ran
-thus
-
-```
-it 1
-describe
-    it 2
-    it.only 3
-    it 4
-it 5
-
-```
-
-would only run 1 and 3... maybe too flawed?
-or maybe just use .tag and make .only for adding predicates (defaults to tagged?)
-
-```
-testish.only.tag()
-
-it 1
-describe
-    it 2
-    it.tag 3
-    it 4
-it 5
-```
+# CLI
+* Specify reporter as 
+  1) A named standard reporter
+  2) A script which exports a Reporter as a Default which inherits from the reporter base?
+* Specify root scripts which are run in the global context rather than their own individual script block
+* Specify scripts which are each run within their own script block
+* Script name is given relative to the configuration file dirname, or the cwd
 

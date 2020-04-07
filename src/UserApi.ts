@@ -75,7 +75,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
     function testishApi(defaults: Partial<Omit<UserOptions, 'description'>>) : UserApiRoot {
         defaults = Object.assign({}, defaults);
 
-        const hookDefaults = {
+        const hookDefaults : Omit<UserOptionsHook, 'when' | 'description'> = {
             timeout: undefined,
             depth: HookDepth.ALL,
             blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT]

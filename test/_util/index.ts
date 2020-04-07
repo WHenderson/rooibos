@@ -1,7 +1,7 @@
 import {JsonReporter, PipeReporter, VerboseReporter} from "../../src/Reporters";
 import {Testish} from "../../src";
 import instantiate = WebAssembly.instantiate;
-import {UserOptionsTestish} from "../../src/types";
+import {Event, UserOptionsTestish} from "../../src/types";
 
 export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsTestish) {
     stateOptions = Object.assign({ start: true }, stateOptions);
@@ -27,7 +27,7 @@ export function createApi(stateOptions?: { promise?: Promise<void>, start: boole
     return { events: jsonReporter.events, api };
 }
 
-export function _mutatingMerge(expected, actual) {
+export function _mutatingMerge(expected : any, actual : any) {
     if (!expected || typeof expected !== 'object' || expected instanceof Error)
         return;
     if (!actual || typeof actual !== 'object' || actual instanceof Error)
@@ -49,7 +49,7 @@ export function _mutatingMerge(expected, actual) {
     if (actual.exception)
         console.log('hmm');
 
-    Object.entries(actual).forEach(([key, val]) => {
+    Object.entries(actual).forEach(([key, val] : [string,any]) => {
         if ({}.hasOwnProperty.call(expected, key)) {
             if (val && val instanceof Error && typeof expected[key] === 'string')
                 actual[key] = val.message;
@@ -62,7 +62,7 @@ export function _mutatingMerge(expected, actual) {
                             obj[key] = val[key];
                             return obj;
                         },
-                        {}
+                        {} as any
                     );
                 mutatingMerge(expected[key], val);
             }
@@ -82,7 +82,7 @@ export function _mutatingMerge(expected, actual) {
     return expected;
 }
 
-function isAtomic(val) {
+function isAtomic(val : any) {
     if (!val)
         return true;
     if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' || typeof val === 'function')
@@ -92,7 +92,7 @@ function isAtomic(val) {
     return false;
 }
 
-export function cloneMerge({ expected, actual }) {
+export function cloneMerge({ expected, actual } : { expected: any, actual: any }) {
     let out = {
         expected: expected,
         actual: actual
@@ -116,7 +116,7 @@ export function cloneMerge({ expected, actual }) {
                 cur[key] = actual[key];
                 return cur;
             },
-            {}
+            {} as any
         );
     }
 
@@ -158,7 +158,7 @@ export function cloneMerge({ expected, actual }) {
     return out;
 }
 
-export function mutatingMerge(expected, actual) {
+export function mutatingMerge(expected : object[], actual : Event[]) {
     const out = cloneMerge({ expected, actual });
 
     expected.splice(0, expected.length, ...out.expected);

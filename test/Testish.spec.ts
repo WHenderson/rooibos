@@ -3,7 +3,7 @@ import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {
-    BlockType,
+    BlockType, Context,
     ErrorAbort,
     ErrorNotJson,
     ErrorTimeout,
@@ -286,7 +286,7 @@ describe('Testish', () => {
         it('describe should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined as Context};
 
             api.describe('a', async (context) => {
                 EX.context = context;
@@ -307,7 +307,7 @@ describe('Testish', () => {
         it('it should time out and not propagate', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined as Context };
 
             api.it('a', async (context) => {
                 EX.context = context;
@@ -327,7 +327,7 @@ describe('Testish', () => {
         it('note should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined as Context };
 
             api.note(Guid.createEmpty(),'a', async (context) => {
                 EX.context = context;
@@ -349,7 +349,7 @@ describe('Testish', () => {
         it('hook should time out', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined };
+            const EX = { name: 'ErrorTimeout', message: 'Timeout', context: undefined as Context };
 
             api.hook('x', async (context) => {
                 EX.context = context;
@@ -404,7 +404,7 @@ describe('Testish', () => {
         it('describe should be abortable', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined as Context };
             let res = EventStatusType.UNUSED;
 
             api.describe('a', async (context) => {
@@ -444,7 +444,7 @@ describe('Testish', () => {
         it('it should be abortable', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined as Context };
             let res = EventStatusType.UNUSED;
 
             api.it('a', async (context) => {
@@ -483,7 +483,7 @@ describe('Testish', () => {
         it('note should be abortable', async () => {
             const { api, events } = createApi();
 
-            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined };
+            const EX = { name: 'ErrorAbort', message: 'Abort', context: undefined as Context };
             let res = EventStatusType.UNUSED;
 
             api.note(Guid.createEmpty(), 'a', async (context) => {
@@ -606,7 +606,7 @@ describe('Testish', () => {
            const id = Guid.createEmpty();
 
            const EX = new Error('my error');
-           const NotJson = { value: undefined };
+           const NotJson = { value: undefined as undefined};
 
            api.note(id, 'a', NotJson);
 
