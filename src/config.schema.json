@@ -1,0 +1,35 @@
+{
+  "title": "Testish Configuration",
+  "description": "Testish Configuration File",
+  "type": "object",
+  "properties": {
+    "only": {
+      "description": "Only run tests with any of the given tags",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "files": {
+      "description": "Filename globs for scripts to include",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  }
+}
