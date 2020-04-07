@@ -1,9 +1,9 @@
 import {JsonReporter, PipeReporter, VerboseReporter} from "../../src/Reporters";
 import {Testish} from "../../src";
 import instantiate = WebAssembly.instantiate;
-import {UserOptionsScript} from "../../src/types";
+import {UserOptionsTestish} from "../../src/types";
 
-export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsScript) {
+export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsTestish) {
     stateOptions = Object.assign({ start: true }, stateOptions);
     userOptions = Object.assign({ description: undefined }, userOptions);
 

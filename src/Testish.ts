@@ -31,7 +31,7 @@ import {
     State,
     UserOptions,
     UserOptionsBlock,
-    UserOptionsHook, UserOptionsScript
+    UserOptionsHook, UserOptionsTestish
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, Deconstructed, AbortApiInternal, Timeout} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
@@ -45,7 +45,7 @@ export class Testish {
     private iapi : AbortApiInternal;
 
     //constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object } = {}) {
-    constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsScript) {
+    constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsTestish) {
         this.reporter = stateOptions.reporter || new NullReporter();
         this.iapi = new AbortApiInternal();
 
@@ -61,10 +61,10 @@ export class Testish {
                 promise: (stateOptions.promise || Promise.resolve())
                     .then(
                         async () => {
-                            await this._stepScriptEnter();
+                            await this._stepTestishEnter();
                         },
                         async (exception) => {
-                            await this._stepScriptEnter(exception);
+                            await this._stepTestishEnter(exception);
                             throw exception;
                         }
                     ),
@@ -180,7 +180,7 @@ export class Testish {
         return hooks;
     }
 
-    private async _stepScriptEnter(exception?: Error) {
+    private async _stepTestishEnter(exception?: Error) {
         await this.report({
             blockType: BlockType.TESTISH,
             eventType: EventType.ENTER,
@@ -190,7 +190,7 @@ export class Testish {
         });
     }
 
-    private async _stepScriptLeave(exception?: Error) {
+    private async _stepTestishLeave(exception?: Error) {
         await this.report({
             blockType: BlockType.TESTISH,
             eventType: EventType.LEAVE,
@@ -868,10 +868,10 @@ export class Testish {
             // leave
             .then(
                 async () => {
-                    await this._stepScriptLeave();
+                    await this._stepTestishLeave();
                 },
                 async (exception) => {
-                    await this._stepScriptLeave(exception);
+                    await this._stepTestishLeave(exception);
                     throw exception;
                 }
             );

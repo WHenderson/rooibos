@@ -23,8 +23,8 @@ const expect = chai.expect;
 
 
 describe('Testish', () => {
-    describe('script', () => {
-       it('empty script should not stall', async () => {
+    describe('testish', () => {
+       it('empty testish should not stall', async () => {
            const { api, events } = createApi();
 
            await api.done();
