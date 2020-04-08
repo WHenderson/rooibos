@@ -105,6 +105,7 @@ dist
 
 .idea
 
+/src/cli/options/config.schema.ts
 /src/**/*.js
 /src/**/*.js.map
 /test/**/*.js
