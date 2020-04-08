@@ -36,6 +36,157 @@ describe('Testish', () => {
        });
     });
 
+    describe('script', () => {
+        it('single script', async () => {
+            const { api, events } = createApi();
+
+            api.script('a', () => {
+            });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+            ], events));
+        });
+        it('script block should execute in order', async () => {
+            const { api, events } = createApi();
+
+            api.script('a', () => {
+            });
+            api.script('b', () => {
+            });
+            api.script('c', () => {
+            });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+            ], events));
+        });
+        it('script blocks should execute depth first', async () => {
+            const { api, events } = createApi();
+
+            api.script('a', () => {
+                api.script('b', () => {
+                });
+            });
+            api.script('c', () => {
+                api.script('d', () => {
+                });
+            });
+
+            await api.done();
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+            ], events));
+        });
+        it('exceptions should be reported in order', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+
+            api.script('a', () => {
+                throw EX;
+            });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+        });
+        it('script should skip after exception', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+
+            api.script('a', () => {
+                api.script('b', () => {
+                });
+                api.script('c', () => {
+                });
+                api.script('d', () => {
+                });
+                throw EX;
+            });
+
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+        });
+        it('exceptions should skip siblings and be passed along during reporting', async () => {
+            const { api, events } = createApi();
+
+            const EX = new Error('my error');
+            const EX2 = new Error('another error');
+
+            api.script('a', async () => {
+                api.script('b', () => {
+                    throw EX;
+                });
+                api.script('c', () => {
+                });
+                api.script('d', () => {
+                });
+            });
+            api.script('e', () => {
+            });
+            await expect(api.done()).to.eventually.be.rejectedWith(EX);
+
+            expect(events).to.deep.equal(mutatingMerge([
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
+                { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: 'e' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+            ], events));
+        });
+    });
+
     describe('describe', () => {
         it('single describe', async () => {
             const { api, events } = createApi();
