@@ -10,7 +10,7 @@ Usage:
 Options:
     -c CONFIG --config=CONFIG       # Specify config file for controlling options
     --only=TAG                      # Only run tests with the given tag
-    --reporter=REPORTER             # Specify an alternate reporter [default: Verbose]
+    --reporter=REPORTER             # Specify an alternate reporter (default: VerboseReporter)
     --global=FILE                   # Specify a script to run globally ahead of the main script files
 `;
 

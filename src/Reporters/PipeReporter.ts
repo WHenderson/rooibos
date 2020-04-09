@@ -1,9 +1,11 @@
 import {Event, Reporter} from "../types";
+import {ReporterBase} from "./ReporterBase";
 
-export class PipeReporter implements Reporter {
+export class PipeReporter extends ReporterBase implements Reporter {
     private readonly reporters : Reporter[];
 
     constructor(reporters: Reporter[]) {
+        super();
         this.reporters = reporters;
     }
 

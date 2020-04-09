@@ -1,6 +1,7 @@
 import {ContextBlock, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
+import {ReporterBase} from "./ReporterBase";
 
-export class VerboseReporter implements Reporter {
+export class VerboseReporter extends ReporterBase implements Reporter {
 
     private static eventTypeMap : { [key in EventType]: string } = {
         [EventType.SKIP] : '↷',
@@ -22,6 +23,8 @@ export class VerboseReporter implements Reporter {
     private readonly indent : boolean;
 
     constructor(options: { log? : (message: string) => void | PromiseLike<void>, indent?: boolean } = {}) {
+        super();
+
         const { log, indent } = Object.assign(
             {
                 log: console.log,

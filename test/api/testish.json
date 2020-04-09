@@ -1,0 +1,6 @@
+{
+  "files": "**/*.testish.ts",
+  "global": "global.ts",
+  "reporter": "reporter.js",
+  "only": ["this", "that"]
+}
