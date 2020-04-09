@@ -24,16 +24,18 @@ import {
     HookSettingsAndState,
     HookWhen,
     isHookBefore,
-    isHookOnce, isHookTarget,
+    isHookOnce,
+    isHookTarget,
     isJsonValue,
     JsonValue,
     Reporter,
     State,
     UserOptions,
     UserOptionsBlock,
-    UserOptionsHook, UserOptionsTestish
+    UserOptionsHook,
+    UserOptionsTestish
 } from "./types";
-import {ABORT_STATE, Abortable, AbortApi, Deconstructed, AbortApiInternal, Timeout} from 'advanced-promises';
+import {ABORT_STATE, Abortable, AbortApi, AbortApiInternal, Deconstructed, Timeout} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
 import {strict as assert} from "assert";
 import {Guid} from "guid-typescript";
@@ -441,6 +443,17 @@ export class Testish {
         }));
     }
 
+    private isTagSkip(ownState : State) : boolean {
+        // skip based on tags
+        if (ownState.blockType === BlockType.IT) {
+            const only = [...this.stateIter(ownState.parentState)].flatMap(state => (state.context as ContextBlock).only || []);
+            const tags = [...this.stateIter(ownState)].flatMap(state => (state.context as ContextBlock).tags || []);
+            if (only.length && !only.some(tag => tags.indexOf(tag) !== -1))
+                return true;
+        }
+        return false;
+    }
+
     private async _stepCallback(
         callback: CallbackHook | CallbackBlock | ((context: ContextNote) => PromiseLike<void>),
         timeout: number,
@@ -627,6 +640,7 @@ export class Testish {
     private queueBlock(blockType: BlockType, callback: CallbackBlock, options: UserOptionsBlock) {
         let ownerState : State = undefined;
         let ownState : State = undefined;
+        let skip : boolean = undefined;
 
         return this.state.promise = this.state.promise
             // create state
@@ -634,12 +648,16 @@ export class Testish {
                 () => {
                     ownerState = this.state;
                     ownState = this.createState(ownerState, blockType, callback, options);
+                    skip = this.isTagSkip(ownState);
                 }
             )
             // beforeOnce
             .then(
                 async () => {
-                    await this._stepRunBeforeOnceHooks(ownerState, ownState);
+                    if (!skip)
+                        await this._stepRunBeforeOnceHooks(ownerState, ownState);
+                    else
+                        await this._stepSkipBeforeOnceHooks(ownerState, ownState);
                 },
                 async (exception) => {
                     await this._stepSkipBeforeOnceHooks(ownerState, ownState, exception);
@@ -655,7 +673,10 @@ export class Testish {
             // beforeEach
             .then(
                 async () => {
-                    await this._stepRunBeforeEachHooks(ownerState, ownState);
+                    if (!skip)
+                        await this._stepRunBeforeEachHooks(ownerState, ownState);
+                    else
+                        await this._stepSkipBeforeEachHooks(ownerState, ownState);
                 },
                 async (exception) => {
                     await this._stepSkipBeforeEachHooks(ownerState, ownState, exception);
@@ -665,19 +686,33 @@ export class Testish {
             // callback
             .then(
                 async () => {
-                    await this._stepCallback(
-                        callback,
-                        options.timeout,
-                        {
-                            ownerState,
-                            ownState,
-                            propagateExceptions: blockType !== BlockType.IT,
-                            eventBase: {
-                                blockType,
-                                context: ownState.context as ContextBlock
+                    if (!skip) {
+                        await this._stepCallback(
+                            callback,
+                            options.timeout,
+                            {
+                                ownerState,
+                                ownState,
+                                propagateExceptions: blockType !== BlockType.IT,
+                                eventBase: {
+                                    blockType,
+                                    context: ownState.context as ContextBlock
+                                }
                             }
-                        }
-                    );
+                        );
+                    }
+                    else {
+                        await this._stepSkip(
+                            {
+                                ownerState,
+                                ownState,
+                                eventBase: {
+                                    blockType,
+                                    context: ownState.context as ContextBlock
+                                }
+                            }
+                        );
+                    }
                 },
                 async (exception) => {
                     await this._stepSkip(
@@ -697,7 +732,10 @@ export class Testish {
             // afterEach
             .then(
                 async () => {
-                    await this._stepRunAfterEachHooks(ownerState, ownState);
+                    if (!skip)
+                        await this._stepRunAfterEachHooks(ownerState, ownState);
+                    else
+                        await this._stepSkipAfterEachHooks(ownerState, ownState);
                 },
                 async (exception) => {
                     await this._stepSkipAfterEachHooks(ownerState, ownState, exception);

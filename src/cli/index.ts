@@ -28,7 +28,8 @@ async function loadReporter() : Promise<Reporter> {
             reporter
         },
         {
-            description: undefined
+            description: undefined,
+            only: options.only
         }
     );
     const uapi = testish(iapi);
