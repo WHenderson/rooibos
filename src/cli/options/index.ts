@@ -21,7 +21,6 @@ export function parse() {
     };
 
     const empty2Undefined = (val) => val && val.length ? val : undefined;
-    const prefixRelative = (filepath) => path.isAbsolute(filepath) ? filepath : (filepath.startsWith('./') || filepath.startsWith('.\\')) ? filepath : `./${filepath}`;
 
     const optionsCmd = {
         files: empty2Undefined(cmd["<file>"]),
@@ -74,10 +73,6 @@ export function parse() {
         filterNA(optionsConfig),
         filterNA(optionsCmd)
     );
-
-    options.files = options.files.map(filepath => prefixRelative(filepath));
-    options.global = prefixRelative(options.global);
-    options.reporter = options.reporter.match('^[a-zA-Z]+$') ? options.reporter : prefixRelative(options.reporter);
 
     return options;
 }
