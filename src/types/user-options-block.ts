@@ -4,4 +4,5 @@ export interface UserOptionsBlock extends UserOptionsBase {
     description: string;
     timeout?: number;
     tags?: string[];
+    only?: string[];
 }

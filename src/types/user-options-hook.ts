@@ -1,12 +1,13 @@
 import {BlockTypeHookTarget} from "./block-type-hook-target";
 import {HookWhen} from "./hook-when";
 import {HookDepth} from "./hook-depth";
-import {UserOptionsBlock} from "./user-options-block";
+import {UserOptionsBase} from "./user-options-base";
 
-export interface UserOptionsHook extends UserOptionsBlock {
+export interface UserOptionsHook extends UserOptionsBase {
+    description: string;
+    timeout?: number;
+
     blockTypes: BlockTypeHookTarget[];
     when: HookWhen;
     depth: HookDepth;
-    timeout?: number;
-    tags?: string[];
 }

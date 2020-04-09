@@ -8,7 +8,7 @@ import {
     HookEachWhen,
     HookOnceWhen,
     UserOptionsHook, HookWhen,
-    JsonValue, UserOptions
+    JsonValue, UserOptions, UserOptionsBlock
 } from "./types";
 import {Script} from "vm";
 
@@ -69,10 +69,12 @@ export interface HookApi {
 
 export type HookApiFunc = HookFunc & HookApi;
 
-export function testish(testish: Testish, defaults?: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
+type DefaultUserOptions = Partial<Omit<UserOptionsBlock & UserOptionsHook, 'depth' | 'blockTypes' | 'when' | 'description'>>;
+
+export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserApiRoot {
     const instance = testish;
 
-    function testishApi(defaults: Partial<Omit<UserOptions, 'description'>>) : UserApiRoot {
+    function testishApi(defaults: DefaultUserOptions) : UserApiRoot {
         defaults = Object.assign({}, defaults);
 
         const hookDefaults : Omit<UserOptionsHook, 'when' | 'description'> = {
@@ -93,7 +95,7 @@ export function testish(testish: Testish, defaults?: Partial<{ timeout: number; 
         }
 
         // testish
-        function testish(options: Partial<{ timeout: number; } & UserOptionsHook>) : UserApiRoot {
+        function testish(options: DefaultUserOptions) : UserApiRoot {
             return testishApi(Object.assign({}, defaults, options));
         }
 
