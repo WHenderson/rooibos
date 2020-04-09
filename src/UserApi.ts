@@ -31,6 +31,9 @@ export type HookFunc =
 export type TagFunc =
     (...tags: (string | string[])[]) => UserApiRoot;
 
+export type OnlyFunc =
+    (...tags: (string | string[])[]) => UserApiRoot;
+
 export type TimeoutFunc =
     (timeout: number) => UserApiRoot;
 
@@ -49,6 +52,7 @@ export interface UserApiRoot {
     afterEach: HookApiFunc;
 
     tag: TagFunc;
+    only: OnlyFunc;
     timeout: TimeoutFunc;
     testish: TestishFunc;
 }
@@ -92,6 +96,12 @@ export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserA
         function tag(...tags: (string | string[])[]) : UserApiRoot {
             const flatTags = tags.map(tag => typeof tag === 'string' ? [tag] : tag).flat(1);
             return testish({ tags: (defaults.tags || []).concat(flatTags) });
+        }
+
+        // only
+        function only(...tags: (string | string[])[]) : UserApiRoot {
+            const flatTags = tags.map(tag => typeof tag === 'string' ? [tag] : tag).flat(1);
+            return testish({ only: (defaults.tags || []).concat(flatTags) });
         }
 
         // testish
@@ -237,7 +247,8 @@ export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserA
 
             timeout,
             testish,
-            tag
+            tag,
+            only
         }
         
     }
