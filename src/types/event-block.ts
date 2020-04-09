@@ -7,7 +7,7 @@ export interface EventBlock extends EventBase {
 }
 
 export function isEventBlock(event: EventBase) : event is EventBlock {
-    return event.blockType === BlockType.TESTISH
+    return event.blockType === BlockType.SCRIPT
         || event.blockType === BlockType.DESCRIBE
         || event.blockType === BlockType.IT;
 }

@@ -1,4 +1,14 @@
-import {ContextBlock, Event, EventStatusType, EventType, isEventBlock, isEventHook, isEventNote, Reporter} from "../types";
+import {
+    Context,
+    ContextBlock,
+    Event,
+    EventStatusType,
+    EventType,
+    isEventBlock,
+    isEventHook,
+    isEventNote,
+    Reporter
+} from "../types";
 import {ReporterBase} from "./ReporterBase";
 
 export class VerboseReporter extends ReporterBase implements Reporter {
@@ -44,20 +54,29 @@ export class VerboseReporter extends ReporterBase implements Reporter {
         let description = !event.context ? '<no context>' : !event.context.description ? '<anonymous>' : `- ${event.context.description}`;
         let blockType = `${event.blockType}`;
 
-        if (isEventBlock(event)) {
+        let indent = 0;
+        const findDepth = (context : Context) => {
+            return context ? findDepth(context.parent) + 1 : 0;
+        };
 
+        if (isEventBlock(event)) {
+            indent = findDepth(event.context);
         }
         if (isEventHook(event)) {
             const getDesc = (context : ContextBlock) => !context ? '<none>': !context.description ? '<anonymous>' : context.description;
             description = `${description} (parent: ${getDesc(event.context.parent)}, creator: ${getDesc(event.context.creator)}, trigger: ${getDesc(event.context.trigger)})`;
 
             blockType = `${blockType} ${event.hookOptions.when} ${event.hookOptions.depth}`;
+
+            indent = findDepth(event.context.trigger);
         }
         if (isEventNote(event)) {
             if (event.eventType === EventType.NOTE || event.eventType === EventType.SKIP)
                 description = `${description} ${event.value === undefined ? '<undefined>' : JSON.stringify(event.value)}`
+
+            indent = findDepth(event.context);
         }
 
-        console.log(`${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
+        console.log(`${this.indent ? ''.padStart(indent) : ''}${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
     }
 }
