@@ -96,6 +96,11 @@ acorn@^7.1.1:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.1.1.tgz#e35668de0b402f359de515c5482a1ab9f89a69bf"
   integrity sha512-add7dgA5ppRPxCFJoAGfMDi7PIBXq1RtGo7BhbLaxwrXPOmw8gq48Y9ozT01hUKy9byMjlR20EJhu5zlkErEkg==
 
+advanced-promises@^1.0.0-beta.8:
+  version "1.0.0-beta.8"
+  resolved "https://registry.yarnpkg.com/advanced-promises/-/advanced-promises-1.0.0-beta.8.tgz#7b1259032a1359fd2b79c0ccea7bdab77f9c85d0"
+  integrity sha512-gLKdoK9/RO5VhFG0tiGly/G+dYEBIjAmTG9vL8ptL0K+nP23QyI3oczTOOA5PUP2u3WSRYTnnv4z9E6GBxjPaA==
+
 ansi-colors@3.2.3:
   version "3.2.3"
   resolved "https://registry.yarnpkg.com/ansi-colors/-/ansi-colors-3.2.3.tgz#57d35b8686e851e2cc04c403f1c00203976a1813"

@@ -6,6 +6,7 @@
   "author": "WHenderson <whenderson.github+smartgit@gmail.com>",
   "private": true,
   "devDependencies": {
+    "@types/docopt": "^0.6.31",
     "@types/mocha": "^5.2.7",
     "@types/node": "^13.1.4",
     "chai": "^4.2.0",
@@ -22,7 +23,7 @@
   "dependencies": {
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
-    "@types/docopt": "^0.6.31",
+    "advanced-promises": "^1.0.0-beta.8",
     "docopt": "^0.6.2",
     "guid-typescript": "^1.0.9"
   },
