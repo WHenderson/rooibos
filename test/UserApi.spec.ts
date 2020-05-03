@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {createApi, mutatingMerge} from "./_util";
-import {testish} from "../src";
+import {rooibos} from "../src";
 import {Guid} from "guid-typescript";
 import {BlockType, EventStatusType, EventType, HookDepth, HookWhen} from "../src/types";
 
@@ -13,7 +13,7 @@ describe('user api', () => {
     describe('hooks', () => {
         it('basic api', async () => {
             const { api: iapi, events } = createApi();
-            const api = testish(iapi);
+            const api = rooibos(iapi);
 
             api.before('before', () => {});
             api.before(function testBefore() {});
@@ -28,7 +28,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'before' }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
                 { context: { description: 'testBefore' }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
                 { context: { description: 'beforeEach' }, hookOptions: { when: HookWhen.BEFORE_EACH, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
@@ -38,13 +38,13 @@ describe('user api', () => {
                 { context: { description: 'after' }, hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
                 { context: { description: 'testAfter' }, hookOptions: { when: HookWhen.AFTER_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
 
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
 
         });
         it('fluent api', async () => {
             const { api: iapi, events } = createApi();
-            const api = testish(iapi);
+            const api = rooibos(iapi);
 
             api.before(() => {});
             api.before.it(() => {});
@@ -59,7 +59,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.SCRIPT, BlockType.DESCRIBE, BlockType.IT] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.IT] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.ALL, blockTypes: [BlockType.DESCRIBE] }  },
@@ -69,7 +69,7 @@ describe('user api', () => {
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.DEEP, blockTypes: [BlockType.DESCRIBE] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.IT] }  },
                 { context: { description: undefined }, hookOptions: { when: HookWhen.BEFORE_ONCE, depth: HookDepth.SHALLOW, blockTypes: [BlockType.DESCRIBE] }  },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
 
         });
@@ -77,7 +77,7 @@ describe('user api', () => {
     describe('blocks', () => {
         it('basic api', async () => {
             const { api: iapi, events } = createApi();
-            const api = testish(iapi);
+            const api = rooibos(iapi);
 
             api.describe('describe', () => {});
             api.describe(function testDescribe() {});
@@ -94,7 +94,7 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'describe' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'describe' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'testDescribe' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -120,14 +120,14 @@ describe('user api', () => {
                 { context: { description: 'testNote' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: Guid.createEmpty(), value: 'value' },
                 { context: { description: 'testNote' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
 
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
     });
     describe('options', () => {
         it('tag', async () => {
             const { api: iapi, events } = createApi();
-            const api = testish(iapi);
+            const api = rooibos(iapi);
 
             api.tag('a').tag('b', 'c').tag(['d','e']).tag('f',['g']).it(() => {
             });
@@ -135,10 +135,10 @@ describe('user api', () => {
             await iapi.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { tags: ['a','b','c','d','e','f','g']}, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         })
     });

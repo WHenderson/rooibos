@@ -33,21 +33,21 @@ import {
     UserOptions,
     UserOptionsBlock,
     UserOptionsHook,
-    UserOptionsTestish
+    UserOptionsRooibos
 } from "./types";
 import {ABORT_STATE, Abortable, AbortApi, AbortApiInternal, Deconstructed, Timeout} from 'advanced-promises';
 import {NullReporter} from "./Reporters/NullReporter";
 import {strict as assert} from "assert";
 import {Guid} from "guid-typescript";
 
-export class Testish {
+export class Rooibos {
     private readonly reporter : Reporter;
     private state: State;
     private rootState : State;
     private iapi : AbortApiInternal;
 
     //constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object } = {}) {
-    constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsTestish) {
+    constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsRooibos) {
         this.reporter = stateOptions.reporter || new NullReporter();
         this.iapi = new AbortApiInternal();
 
@@ -56,17 +56,17 @@ export class Testish {
 
         this.rootState = this.state = this.createState(
             undefined,
-            BlockType.TESTISH,
+            BlockType.ROOIBOS,
             undefined,
             userOptions,
             {
                 promise: (stateOptions.promise || Promise.resolve())
                     .then(
                         async () => {
-                            await this._stepTestishEnter();
+                            await this._stepRooibosEnter();
                         },
                         async (exception) => {
-                            await this._stepTestishEnter(exception);
+                            await this._stepRooibosEnter(exception);
                             throw exception;
                         }
                     ),
@@ -182,9 +182,9 @@ export class Testish {
         return hooks;
     }
 
-    private async _stepTestishEnter(exception?: Error) {
+    private async _stepRooibosEnter(exception?: Error) {
         await this.report({
-            blockType: BlockType.TESTISH,
+            blockType: BlockType.ROOIBOS,
             eventType: EventType.ENTER,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
@@ -192,9 +192,9 @@ export class Testish {
         });
     }
 
-    private async _stepTestishLeave(exception?: Error) {
+    private async _stepRooibosLeave(exception?: Error) {
         await this.report({
-            blockType: BlockType.TESTISH,
+            blockType: BlockType.ROOIBOS,
             eventType: EventType.LEAVE,
             eventStatusType: !exception ? EventStatusType.SUCCESS : EventStatusType.EXCEPTION,
             exception,
@@ -898,7 +898,7 @@ export class Testish {
             // note exceptions
             .catch(async (exception) => {
                 await this.report({
-                    blockType: BlockType.TESTISH,
+                    blockType: BlockType.ROOIBOS,
                     eventType: EventType.NOTE,
                     eventStatusType: EventStatusType.EXCEPTION,
                     context: this.rootState.context as ContextBlock,
@@ -909,10 +909,10 @@ export class Testish {
             // leave
             .then(
                 async () => {
-                    await this._stepTestishLeave();
+                    await this._stepRooibosLeave();
                 },
                 async (exception) => {
-                    await this._stepTestishLeave(exception);
+                    await this._stepRooibosLeave(exception);
                     throw exception;
                 }
             );

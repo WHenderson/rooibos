@@ -1,5 +1,5 @@
-import { Testish } from "./Testish";
+import { Rooibos } from "./Rooibos";
 import { Reporter, VerboseReporter, PipeReporter, JsonReporter } from "./Reporters";
-import { testish } from "./UserApi";
+import { rooibos } from "./UserApi";
 
-export { Testish, Reporter, VerboseReporter, PipeReporter, JsonReporter, testish };
+export { Rooibos, Reporter, VerboseReporter, PipeReporter, JsonReporter, rooibos };

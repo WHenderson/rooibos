@@ -1,8 +1,8 @@
 {
-  "name": "testish",
+  "name": "rooibos",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/WHenderson/testish.git",
+  "repository": "https://github.com/WHenderson/rooibos.git",
   "author": "WHenderson <whenderson.github+smartgit@gmail.com>",
   "private": true,
   "devDependencies": {
@@ -28,7 +28,7 @@
     "guid-typescript": "^1.0.9"
   },
   "bin": {
-    "testish": "src/cli/index.js"
+    "rooibos": "src/cli/index.js"
   },
   "scripts": {
     "build-config": "quicktype --lang ts --src-lang schema --out src/cli/options/config.schema.ts src/cli/options/config.schema.json",

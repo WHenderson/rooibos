@@ -1,5 +1,5 @@
 {
-  "files": "**/*.testish.ts",
+  "files": "**/*.rooibos.ts",
   "global": "global.ts",
   "reporter": "reporter.js",
   "only": ["this", "that"]

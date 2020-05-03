@@ -1,4 +1,4 @@
-# testish
+# rooibos
 Async testing framework
 
 TODO:

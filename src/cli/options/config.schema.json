@@ -1,6 +1,6 @@
 {
-  "title": "Testish Configuration",
-  "description": "Testish Configuration File",
+  "title": "Rooibos Configuration",
+  "description": "Rooibos Configuration File",
   "type": "object",
   "properties": {
     "only": {
