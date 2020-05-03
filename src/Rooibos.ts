@@ -46,7 +46,6 @@ export class Rooibos {
     private rootState : State;
     private iapi : AbortApiInternal;
 
-    //constructor(options: { reporter?: Reporter; description?: string; promise?: Promise<void>; data?: object } = {}) {
     constructor(stateOptions: { reporter: Reporter, promise?: Promise<void>}, userOptions: UserOptionsRooibos) {
         this.reporter = stateOptions.reporter || new NullReporter();
         this.iapi = new AbortApiInternal();
@@ -102,13 +101,13 @@ export class Rooibos {
     private createState(parentState: State, blockType: BlockType, callback: Callback, userOptions: UserOptions, stateOptions: { promise?: Promise<void>, aapi?:AbortApi} = {}) : State {
         const start = new Deconstructed<void>();
         const state : State = {
-            blockType: blockType,
+            blockType,
             promiseStart: start,
             promise: start.then(() => stateOptions.promise || Promise.resolve()),
             hooks: [],
             aapi: stateOptions.aapi || undefined,
             context: undefined,
-            parentState: parentState,
+            parentState,
             triggers: []
         };
         state.context = this.createContext(state, callback, userOptions);
@@ -156,8 +155,8 @@ export class Rooibos {
         // Get all states in the current stack, ordering appropriately
         const states = isHookBefore(when) ? [...this.stateIter(fromState)].reverse() : [...this.stateIter(fromState)];
 
-        for (let state of states) {
-            for (let hook of state.hooks.slice()) {
+        for (const state of states) {
+            for (const hook of state.hooks.slice()) {
                 // blockType
                 if (hook.blockTypes && hook.blockTypes.length
                 && !blockTypes.some(blockType => hook.blockTypes.includes(blockType as BlockTypeHookTarget)))
@@ -325,7 +324,7 @@ export class Rooibos {
 
         // If a settings targets multiple block types, we want to execute after the last target trigger
         const findLastIndex = <T>(arr: T[], predicate: (val: T, idx: number, arr: T[]) => boolean) => {
-            for (let [idx, val] of [...arr.entries()].reverse()) {
+            for (const [idx, val] of [...arr.entries()].reverse()) {
                 if (predicate(val, idx, arr))
                     return idx;
             }
@@ -341,7 +340,7 @@ export class Rooibos {
                                 iTrigger === findLastIndex(
                                     ownerState.triggers,
                                     trigger =>
-                                        (hook.settings.depth === HookDepth.ALL || hook.settings.depth == trigger.depth) &&
+                                        (hook.settings.depth === HookDepth.ALL || hook.settings.depth === trigger.depth) &&
                                         hook.settings.blockTypes.indexOf(trigger.state.blockType as BlockTypeHookTarget) !== -1
                                 )
                             )
