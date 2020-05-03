@@ -1,5 +1,5 @@
 import {Guid} from "guid-typescript";
-import {Testish} from "./Testish";
+import {Rooibos} from "./Rooibos";
 import {
     BlockType,
     CallbackBlock,
@@ -37,7 +37,7 @@ export type OnlyFunc =
 export type TimeoutFunc =
     (timeout: number) => UserApiRoot;
 
-export type TestishFunc =
+export type RooibosFunc =
     (options: Partial<{ timeout: number; }>) => UserApiRoot;
 
 export interface UserApiRoot {
@@ -54,7 +54,7 @@ export interface UserApiRoot {
     tag: TagFunc;
     only: OnlyFunc;
     timeout: TimeoutFunc;
-    testish: TestishFunc;
+    rooibos: RooibosFunc;
 }
 
 export interface HookApiKnownDepth {
@@ -75,10 +75,10 @@ export type HookApiFunc = HookFunc & HookApi;
 
 type DefaultUserOptions = Partial<Omit<UserOptionsBlock & UserOptionsHook, 'depth' | 'blockTypes' | 'when' | 'description'>>;
 
-export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserApiRoot {
-    const instance = testish;
+export function rooibos(rooibos: Rooibos, defaults?: DefaultUserOptions) : UserApiRoot {
+    const instance = rooibos;
 
-    function testishApi(defaults: DefaultUserOptions) : UserApiRoot {
+    function rooibosApi(defaults: DefaultUserOptions) : UserApiRoot {
         defaults = Object.assign({}, defaults);
 
         const hookDefaults : Omit<UserOptionsHook, 'when' | 'description'> = {
@@ -89,24 +89,24 @@ export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserA
 
         // timeout
         function timeout(timeout: number) : UserApiRoot {
-            return testish({ timeout });
+            return rooibos({ timeout });
         }
 
         // tag
         function tag(...tags: (string | string[])[]) : UserApiRoot {
             const flatTags = tags.map(tag => typeof tag === 'string' ? [tag] : tag).flat(1);
-            return testish({ tags: (defaults.tags || []).concat(flatTags) });
+            return rooibos({ tags: (defaults.tags || []).concat(flatTags) });
         }
 
         // only
         function only(...tags: (string | string[])[]) : UserApiRoot {
             const flatTags = tags.map(tag => typeof tag === 'string' ? [tag] : tag).flat(1);
-            return testish({ only: (defaults.tags || []).concat(flatTags) });
+            return rooibos({ only: (defaults.tags || []).concat(flatTags) });
         }
 
-        // testish
-        function testish(options: DefaultUserOptions) : UserApiRoot {
-            return testishApi(Object.assign({}, defaults, options));
+        // rooibos
+        function rooibos(options: DefaultUserOptions) : UserApiRoot {
+            return rooibosApi(Object.assign({}, defaults, options));
         }
 
         // describe
@@ -246,13 +246,13 @@ export function testish(testish: Testish, defaults?: DefaultUserOptions) : UserA
             afterEach: addHookApi(afterEach, HookEachWhen.AFTER_EACH),
 
             timeout,
-            testish,
+            rooibos,
             tag,
             only
         }
         
     }
-    return testishApi(defaults);
+    return rooibosApi(defaults);
 }
 
 

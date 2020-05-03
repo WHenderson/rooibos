@@ -1,4 +1,4 @@
-import {Testish} from "../src/Testish";
+import {Rooibos} from "../src/Rooibos";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -22,16 +22,16 @@ const should = chai.should;
 const expect = chai.expect;
 
 
-describe('Testish', () => {
-    describe('testish', () => {
-       it('empty testish should not stall', async () => {
+describe('Rooibos', () => {
+    describe('rooibos', () => {
+       it('empty rooibos should not stall', async () => {
            const { api, events } = createApi();
 
            await api.done();
 
            expect(events).to.deep.equal(mutatingMerge([
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
            ], events));
        });
     });
@@ -46,10 +46,10 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('script block should execute in order', async () => {
@@ -65,14 +65,14 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('script blocks should execute depth first', async () => {
@@ -90,7 +90,7 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -99,7 +99,7 @@ describe('Testish', () => {
                 { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('exceptions should be reported in order', async () => {
@@ -114,12 +114,12 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('script should skip after exception', async () => {
@@ -140,15 +140,15 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'd' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('exceptions should skip siblings and be passed along during reporting', async () => {
@@ -171,7 +171,7 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
@@ -181,8 +181,8 @@ describe('Testish', () => {
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.SCRIPT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'e' }, blockType: BlockType.SCRIPT, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
     });
@@ -197,10 +197,10 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('describe block should execute in order', async () => {
@@ -216,14 +216,14 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('describe blocks should execute depth first', async () => {
@@ -241,7 +241,7 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -250,7 +250,7 @@ describe('Testish', () => {
                 { context: { description: 'd' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'd' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('exceptions should be reported in order', async () => {
@@ -265,12 +265,12 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('describe should skip after exception', async () => {
@@ -291,15 +291,15 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'd' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('exceptions should skip siblings and be passed along during reporting', async () => {
@@ -322,7 +322,7 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
@@ -332,8 +332,8 @@ describe('Testish', () => {
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'e' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
     });
@@ -348,10 +348,10 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('should fail without throwing', async () => {
@@ -366,11 +366,11 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('should fail from chai', async () => {
@@ -385,11 +385,11 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
         it('exceptions should not propagate', async () => {
@@ -414,7 +414,7 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'x' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'x' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
@@ -428,7 +428,7 @@ describe('Testish', () => {
                 { context: { description: 'z' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'z' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
             ], events));
         });
     });
@@ -447,12 +447,12 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('it should time out and not propagate', async () => {
@@ -468,11 +468,11 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
             ], events));
         });
         it('note should time out', async () => {
@@ -489,12 +489,12 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('hook should time out', async () => {
@@ -512,13 +512,13 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorTimeout, 'Timeout');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.TIMEOUT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
         });
         it('timeout should propagate like an exception', async () => {
@@ -537,7 +537,7 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(EX.constructor, 'Timeout');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.TIMEOUT, exception: EX.message },
@@ -545,8 +545,8 @@ describe('Testish', () => {
                 { context: { description: 'c' }, blockType: BlockType.DESCRIBE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, exception: EX.message },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX.message },
             ], events));
         });
     });
@@ -576,7 +576,7 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorAbort, 'Abort');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
 
                 { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -587,8 +587,8 @@ describe('Testish', () => {
 
                 { context: { description: 'should be skipped', parent: { exception: EX }}, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
 
         });
@@ -616,7 +616,7 @@ describe('Testish', () => {
             await api.done();
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
 
                 { context: { description: 'not yet aborted' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -627,7 +627,7 @@ describe('Testish', () => {
 
                 { context: { description: 'should be skipped', parent: { exception: EX }}, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
             ], events));
 
         });
@@ -654,12 +654,12 @@ describe('Testish', () => {
             await expect(api.done()).to.eventually.be.rejectedWith(ErrorAbort, 'Abort');
 
             expect(events).to.deep.equal(mutatingMerge([
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.ABORT, exception: EX },
                 { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.ABORT, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
-                { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
+                { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: EX },
             ], events));
 
         });
@@ -686,7 +686,7 @@ describe('Testish', () => {
            // TODO: Put notes into the queue to ensure they are executed in sibling order
 
            expect(events).to.deep.equal(mutatingMerge([
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
@@ -706,7 +706,7 @@ describe('Testish', () => {
                { context: { description: 'global note after' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { context: { description: 'global note after' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: 'my value' },
                { context: { description: 'global note after' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
            ], events));
        });
        it('should evaluate callback at execution time', async () => {
@@ -720,11 +720,11 @@ describe('Testish', () => {
            await api.done();
 
            expect(events).to.deep.equal(mutatingMerge([
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id },
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.SUCCESS, id: id, value: value },
                { context: { description: 'global note' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS, id: id },
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
            ], events));
        });
        it('should skip evaluation after error', async () => {
@@ -741,14 +741,14 @@ describe('Testish', () => {
            await expect(api.done()).to.eventually.be.rejectedWith(EX);
 
            expect(events).to.deep.equal(mutatingMerge([
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined },
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: EX },
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: EX },
                { context: { description: 'b' }, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined, exception: EX },
                { context: { description: 'c' }, blockType: BlockType.NOTE, eventType: EventType.SKIP, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined, exception: EX },
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX},
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: EX},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION},
            ], events));
        });
        it('should fail for non-json', async () => {
@@ -764,12 +764,12 @@ describe('Testish', () => {
            await expect(api.done()).to.eventually.be.rejectedWith(ErrorNotJson, 'Not Json');
 
            expect(events).to.deep.equal(mutatingMerge([
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS, id: id, value: undefined },
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: { message: 'Not Json', value: NotJson } },
                { context: { description: 'a' }, blockType: BlockType.NOTE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, id: id, value: undefined, exception: 'Not Json' },
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
-               { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.NOTE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
+               { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.EXCEPTION, exception: 'Not Json'},
            ], events));
        })
     });
@@ -793,7 +793,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'x', trigger: { description: 'a' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'a' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -804,7 +804,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -825,7 +825,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'b' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'b' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -836,7 +836,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -859,7 +859,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -872,7 +872,7 @@ describe('Testish', () => {
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -891,14 +891,14 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'y', trigger: undefined }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
                     { context: { description: 'a', trigger: undefined }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x' }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
             });
             it('should only run shallow', async () => {
@@ -922,7 +922,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -937,7 +937,7 @@ describe('Testish', () => {
                     { context: { description: 'x', trigger: { description: '3' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -962,7 +962,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -977,7 +977,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1000,7 +1000,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -1011,7 +1011,7 @@ describe('Testish', () => {
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '2' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '2' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1032,7 +1032,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -1043,7 +1043,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1066,7 +1066,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1082,7 +1082,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1101,14 +1101,14 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'y', trigger: undefined }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: undefined }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1133,7 +1133,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1148,7 +1148,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '1' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1173,7 +1173,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1188,7 +1188,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '3' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '3' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1211,7 +1211,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'x', trigger: { description: 'a' } }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'a' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1228,7 +1228,7 @@ describe('Testish', () => {
                     { context: { description: 'x', trigger: { description: '2' } }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1251,7 +1251,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'x', trigger: { description: 'a' }  }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'a' }  }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1270,7 +1270,7 @@ describe('Testish', () => {
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1289,14 +1289,14 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'y', trigger: undefined  }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: undefined  }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1321,7 +1321,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
 
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
 
@@ -1341,7 +1341,7 @@ describe('Testish', () => {
                     { context: { description: 'x', trigger: { description: '3' }  }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1366,7 +1366,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
@@ -1387,7 +1387,7 @@ describe('Testish', () => {
                     { context: { description: '2' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '2' }  }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '2' }  }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1410,7 +1410,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1432,7 +1432,7 @@ describe('Testish', () => {
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'a' }  }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: 'a' }  }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1451,14 +1451,14 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'y', trigger: undefined  }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: undefined  }, blockType: BlockType.HOOK, eventType: EventType.SKIP, eventStatusType: EventStatusType.UNUSED },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1483,7 +1483,7 @@ describe('Testish', () => {
                 await api.done();
 
                 expect(events).to.deep.equal(mutatingMerge([
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS},
                     { context: { description: 'a' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'b' }, blockType: BlockType.DESCRIBE, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: '1' }, blockType: BlockType.IT, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
@@ -1502,7 +1502,7 @@ describe('Testish', () => {
                     { context: { description: '3' }, blockType: BlockType.IT, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '3' }  }, blockType: BlockType.HOOK, eventType: EventType.ENTER, eventStatusType: EventStatusType.SUCCESS },
                     { context: { description: 'x', trigger: { description: '3' }  }, blockType: BlockType.HOOK, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS },
-                    { context: { description: undefined }, blockType: BlockType.TESTISH, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
+                    { context: { description: undefined }, blockType: BlockType.ROOIBOS, eventType: EventType.LEAVE, eventStatusType: EventStatusType.SUCCESS},
                 ], events));
 
             });
@@ -1523,7 +1523,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '1' } },
                 { context: { description: '2' } },
@@ -1543,7 +1543,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '1' } },
                 { context: { description: '2' } },
@@ -1559,7 +1559,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '1' } },
                 { context: { description: '2' } },
@@ -1581,7 +1581,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '0' } },
                 { context: { description: '1' } },
@@ -1605,7 +1605,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '0' } },
                 { context: { description: '1' } },
@@ -1626,7 +1626,7 @@ describe('Testish', () => {
 
             await api.done();
 
-            const filteredEvents = events.filter(event => event.blockType !== BlockType.TESTISH && event.eventType === EventType.ENTER);
+            const filteredEvents = events.filter(event => event.blockType !== BlockType.ROOIBOS && event.eventType === EventType.ENTER);
             expect(filteredEvents).to.deep.equal(mutatingMerge([
                 { context: { description: '0' } },
                 { context: { description: '1' } },

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parse } from './options';
-import { Testish } from '../Testish';
-import { testish } from "../UserApi";
+import { Rooibos } from '../Rooibos';
+import { rooibos } from "../UserApi";
 import {Reporter} from "../types";
 import * as StandardReporters from '../Reporters';
 import {ReporterBase} from "../Reporters/ReporterBase";
@@ -23,7 +23,7 @@ async function loadReporter() : Promise<Reporter> {
 
 (async () => {
     const reporter = await loadReporter();
-    const iapi = new Testish(
+    const iapi = new Rooibos(
         {
             reporter
         },
@@ -32,7 +32,7 @@ async function loadReporter() : Promise<Reporter> {
             only: options.only
         }
     );
-    const uapi = testish(iapi);
+    const uapi = rooibos(iapi);
 
     // place User API into the global namespace
     Object.assign(global, uapi);

@@ -1,14 +1,14 @@
 import {JsonReporter, PipeReporter, VerboseReporter} from "../../src/Reporters";
-import {Testish} from "../../src";
+import {Rooibos} from "../../src";
 import instantiate = WebAssembly.instantiate;
-import {Event, UserOptionsTestish} from "../../src/types";
+import {Event, UserOptionsRooibos} from "../../src/types";
 
-export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsTestish) {
+export function createApi(stateOptions?: { promise?: Promise<void>, start: boolean }, userOptions? : UserOptionsRooibos) {
     stateOptions = Object.assign({ start: true }, stateOptions);
     userOptions = Object.assign({ description: undefined }, userOptions);
 
     const jsonReporter = new JsonReporter();
-    const api = new Testish(
+    const api = new Rooibos(
         Object.assign(
             {
                 reporter: new PipeReporter([

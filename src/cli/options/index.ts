@@ -13,7 +13,7 @@ export interface Options {
 
 export function parse() {
     const cmd = parseCmd();
-    const filepathConfig = cmd["--config"] || (fs.existsSync('testish.config') && 'testish.config');
+    const filepathConfig = cmd["--config"] || (fs.existsSync('rooibos.config') && 'rooibos.config');
 
     const optionsDefault = {
         files: [],
@@ -48,14 +48,14 @@ export function parse() {
         if (optionsConfig.files)
             optionsConfig.files = fg.sync(optionsConfig.files, { cwd }).map(filepath => path.join(cwd, filepath));
         else if (!optionsCmd.files)
-            optionsConfig.files = fg.sync(['test/**/*.testish.js'], { cwd }).map(filepath => path.join(cwd, filepath));
+            optionsConfig.files = fg.sync(['test/**/*.rooibos.js'], { cwd }).map(filepath => path.join(cwd, filepath));
 
         if (optionsConfig.reporter && !optionsConfig.reporter.match(/^[a-zA-Z]+$/))
             optionsConfig.reporter = path.join(cwd, optionsConfig.reporter);
     }
     else {
         if (!optionsCmd.files)
-            optionsCmd.files = fg.sync(['test/**/*.testish.js']);
+            optionsCmd.files = fg.sync(['test/**/*.rooibos.js']);
     }
 
     const filterNA = (obj) => Object.entries(obj)

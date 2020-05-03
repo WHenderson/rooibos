@@ -1,11 +1,11 @@
 const doc = `
-testish.
+rooibos.
 A fully async test framework with detailed and customizable reporting.
 
 Usage:
-    testish [options] [--only=TAG]... [<file>...]
-    testish -h | --help
-    testish --version
+    rooibos [options] [--only=TAG]... [<file>...]
+    rooibos -h | --help
+    rooibos --version
     
 Options:
     -c CONFIG --config=CONFIG       # Specify config file for controlling options
