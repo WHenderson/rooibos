@@ -1,3 +1,10 @@
+// Empty Blocks used for testing reporting:
+// tslint:disable:no-empty
+// Chai assertions:
+// tslint:disable:no-unused-expression
+// These are just tests:
+// tslint:disable:object-literal-shorthand
+
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {createApi, mutatingMerge} from "./_util";

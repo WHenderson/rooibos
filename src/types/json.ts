@@ -17,6 +17,6 @@ export function isJsonValue(value: any) : value is JsonValue {
         typeof value === 'number' ||
         typeof value === 'boolean' ||
         (Array.isArray(value) && value.every(item => isJsonValue(item))) ||
-        (typeof value == 'object' && Object.values(value).every(item => isJsonValue(item)))
+        (typeof value === 'object' && Object.values(value).every(item => isJsonValue(item)))
     );
 }

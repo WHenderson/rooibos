@@ -46,9 +46,6 @@ export function _mutatingMerge(expected : any, actual : any) {
             delete expected[key];
     });
 
-    if (actual.exception)
-        console.log('hmm');
-
     Object.entries(actual).forEach(([key, val] : [string,any]) => {
         if ({}.hasOwnProperty.call(expected, key)) {
             if (val && val instanceof Error && typeof expected[key] === 'string')
@@ -56,7 +53,7 @@ export function _mutatingMerge(expected : any, actual : any) {
             else if (val && val instanceof Error && typeof expected[key] === 'object' && !(expected[key] instanceof Error)) {
                 val = actual[key] = ['name', 'message']
                     .concat(Object.keys(val))
-                    .filter((val, idx, arr) => arr.indexOf(val) == idx)
+                    .filter((val, idx, arr) => arr.indexOf(val) === idx)
                     .reduce(
                         (obj, key) => {
                             obj[key] = val[key];
@@ -93,9 +90,9 @@ function isAtomic(val : any) {
 }
 
 export function cloneMerge({ expected, actual } : { expected: any, actual: any }) {
-    let out = {
-        expected: expected,
-        actual: actual
+    const out = {
+        expected,
+        actual
     };
 
     // string vs Error

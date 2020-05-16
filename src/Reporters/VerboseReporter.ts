@@ -37,6 +37,7 @@ export class VerboseReporter extends ReporterBase implements Reporter {
 
         const { log, indent } = Object.assign(
             {
+                // tslint:disable-next-line:no-console
                 log: console.log,
                 indent: false
             },
@@ -77,6 +78,6 @@ export class VerboseReporter extends ReporterBase implements Reporter {
             indent = findDepth(event.context);
         }
 
-        console.log(`${this.indent ? ''.padStart(indent) : ''}${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
+        this.log(`${this.indent ? ''.padStart(indent) : ''}${eventTypeSymbol}${eventStatusTypeSymbol} ${blockType} ${description} ${event.exception ? ': ' + event.exception.message : ''}`);
     }
 }

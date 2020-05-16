@@ -1,3 +1,10 @@
+// Empty Blocks used for testing reporting:
+// tslint:disable:no-empty
+// Chai assertions:
+// tslint:disable:no-unused-expression
+// These are just tests:
+// tslint:disable:object-literal-shorthand
+
 import {Rooibos} from "../src/Rooibos";
 import {Timeout} from 'advanced-promises';
 import * as chai from 'chai';
