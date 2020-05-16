@@ -49,7 +49,7 @@
     "build": "yarn run build:src && yarn run build:doc",
     "pretest": "yarn run build:src",
     "test": "mocha",
-    "prepublishOnly": "yarn run build:doc",
+    "prepublishOnly": "yarn run build",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json"
   },
